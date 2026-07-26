@@ -1,0 +1,7 @@
+android/
+electron/
+dist-electron/
+*.exe
+*.apk
+node_modules/
+.git/
