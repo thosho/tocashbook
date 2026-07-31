@@ -118,10 +118,11 @@ export default function StaffEntry({ user, setAuthUser }) {
   useEffect(() => {
     if (!editTransaction) {
       const filteredCats = categories.filter(c => c.Type === type);
-      if (filteredCats.length > 0) {
-        setCategory(filteredCats[0].Name);
-      } else {
-        setCategory('');
+      // Only reset category if the current selection is invalid for this type
+      // This prevents overwriting a newly created category after adding it
+      const currentStillValid = filteredCats.some(c => c.Name === category);
+      if (!currentStillValid) {
+        setCategory(filteredCats.length > 0 ? filteredCats[0].Name : '');
       }
     }
   }, [type, categories, editTransaction]);

@@ -40,7 +40,22 @@ export default function BossHome({ user, setAuthUser }) {
   const [showInlineStaffForm, setShowInlineStaffForm] = useState(false);
 
   useEffect(() => {
-    loadData();
+    // Auto-sync on first load so boss always sees latest staff entries from Google Sheet
+    const autoSync = async () => {
+      setSyncing(true);
+      try {
+        await fetchAllData();
+        await syncOfflineTransactions();
+        await syncPendingEdits();
+        await syncPendingDeletes();
+        await loadData();
+      } catch (e) {
+        // Silent fail — just load local data if network unavailable
+        await loadData();
+      }
+      setSyncing(false);
+    };
+    autoSync();
   }, []);
 
   const loadData = async () => {
