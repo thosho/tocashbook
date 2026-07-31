@@ -492,7 +492,9 @@ export default function StaffEntry({ user, setAuthUser }) {
             <select 
               value={activeBookId} 
               onChange={(e) => {
-                setActiveBookId(e.target.value);
+                const newId = e.target.value;
+                resolvedBookIdRef.current = newId;
+                setActiveBookId(newId);
                 setTimeout(() => loadData(), 0);
               }}
               style={{ padding: '6px 10px', fontSize: '0.875rem', borderRadius: '8px', background: 'var(--bg-color)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none' }}
@@ -607,7 +609,7 @@ export default function StaffEntry({ user, setAuthUser }) {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: books.length > 1 ? '1fr 1fr 1fr' : '1fr 1fr', gap: '16px' }}>
             <div className="input-group">
               <label>Category</label>
               <select value={category} onChange={(e) => setCategory(e.target.value)} required>
@@ -631,6 +633,28 @@ export default function StaffEntry({ user, setAuthUser }) {
                 <option value="Bank Transfer">Bank Transfer</option>
               </select>
             </div>
+
+            {/* Book selector inside form — only shown when staff has multiple books */}
+            {books.length > 1 && (
+              <div className="input-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <BookOpen size={13} /> Cashbook
+                </label>
+                <select
+                  value={resolvedBookIdRef.current || activeBookId}
+                  onChange={(e) => {
+                    const newId = e.target.value;
+                    resolvedBookIdRef.current = newId;
+                    setActiveBookId(newId);
+                    setTimeout(() => loadData(), 0);
+                  }}
+                >
+                  {books.map(b => (
+                    <option key={b.ID} value={b.ID}>{b.Name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {category === 'CREATE_NEW' && (

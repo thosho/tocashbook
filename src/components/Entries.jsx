@@ -75,12 +75,15 @@ export default function Entries() {
     setSyncing(false);
   };
 
-  // BUG-C2 FIX: book_main catches entries with no bookId (legacy), other books only exact match
+  // ACCOUNTING: Main Book = General Ledger = all transactions, skip auto-reflected copies.
+  // Individual books show only their own entries.
   const filteredTx = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     let result = [...transactions]
       .filter(t => {
-        if (activeBookId === 'book_main') return !t.bookId || t.bookId === 'book_main';
+        if (!activeBookId || activeBookId === 'book_main') {
+          return !t.bossNotes?.startsWith('Auto-reflected'); // General ledger, no duplicates
+        }
         return t.bookId === activeBookId;
       })
       .sort((a, b) => new Date(b.date) - new Date(a.date))

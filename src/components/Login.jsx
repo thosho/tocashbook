@@ -93,7 +93,7 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
 
     // Verify PIN (supports both hashed and legacy plain-text)
     const pinMatch = await verifyPIN(pin, String(user.PIN));
-    if (!pinMatch) { setError('Invalid username or PIN'); return; }
+    if (!pinMatch) { setError('Invalid username or PIN'); setPin(''); return; } // BUG-L1 FIX: Clear PIN on fail
 
     // Load session timeout from settings
     const settings = await getSettings();
@@ -124,6 +124,13 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
     setLoading(true);
     try {
       await setApiLink(branch.url);
+      // BUG-L2 FIX: Clear local transactions/users when switching branches to prevent data mixing
+      await localforage.setItem('transactions', []);
+      await localforage.setItem('users', []);
+      await localforage.setItem('pendingSync', []);
+      await localforage.setItem('pendingEdits', []);
+      await localforage.setItem('pendingDeletes', []);
+      await localforage.setItem('activeBookId', 'book_main');
       await fetchAllData();
       setActiveBranch(branch);
       setApiLinkState(branch.url);

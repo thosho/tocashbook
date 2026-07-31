@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getTransactions, getSettings, getBooks, getUsers, saveBooks, saveUsers } from '../services/localDb';
+import { getTransactions, getSettings, getBooks, getUsers, saveBooks, saveUsers, saveTransactions } from '../services/localDb';
 import { fetchAllData, syncOfflineTransactions, syncPendingEdits, syncPendingDeletes, pushUsers, pushBooks } from '../services/sheetsApi';
 import { hashPIN } from '../services/authUtils';
 import { 
@@ -7,7 +7,7 @@ import {
   LineElement, BarElement, Title, Tooltip, Legend, ArcElement 
 } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
-import { LogOut, RefreshCw, ArrowUpRight, ArrowDownRight, PlusCircle, Users, BarChart3, Settings, BookOpen, Share2, Eye, EyeOff, X, Plus, Contact } from 'lucide-react';
+import { LogOut, RefreshCw, ArrowUpRight, ArrowDownRight, PlusCircle, Users, BookOpen, Share2, Eye, EyeOff, X, Plus, Contact, Trash2, AlertTriangle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../context/AppContext';
@@ -22,8 +22,7 @@ export default function BossHome({ user, setAuthUser }) {
   const [usersList, setUsersList] = useState([]);
   const [syncing, setSyncing] = useState(false);
   const [showStaffSummary, setShowStaffSummary] = useState(false);
-  const [showBalance, setShowBalance] = useState(false);
-  const [showBooks, setShowBooks] = useState(false);
+  const [showBooks, setShowBooks] = useState(true);
   const [settings, setSettings] = useState({});
   const navigate = useNavigate();
 
@@ -38,6 +37,14 @@ export default function BossHome({ user, setAuthUser }) {
   const [inlineStaffPhone, setInlineStaffPhone] = useState('');
   const [inlineStaffPin, setInlineStaffPin] = useState('');
   const [showInlineStaffForm, setShowInlineStaffForm] = useState(false);
+
+  // Delete Book State
+  const [showDeleteBook, setShowDeleteBook] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState(null);
+  const [deleteMode, setDeleteMode] = useState('move'); // 'move' | 'delete'
+  const [deletePin, setDeletePin] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     // Auto-sync on first load so boss always sees latest staff entries from Google Sheet
@@ -60,11 +67,15 @@ export default function BossHome({ user, setAuthUser }) {
 
   const loadData = async () => {
     const allTrans = await getTransactions();
-    // Fix: book_main also catches legacy entries with no bookId (backward compat)
-    // Other books only show entries explicitly saved with that bookId
+    // ACCOUNTING: Main Book = General Ledger = consolidated view of ALL cashbooks.
+    // Entries with no bookId are backward-compatible (treated as Main Book).
+    // Individual sub-books show ONLY their own entries.
+    // Skip 'Auto-reflected' copies in Main Book to avoid double-counting.
     const filtered = allTrans.filter(t => {
-      if (!activeBookId) return true;
-      if (activeBookId === 'book_main') return !t.bookId || t.bookId === 'book_main';
+      if (!activeBookId || activeBookId === 'book_main') {
+        // Main Book: show all, but skip auto-reflected copies (they are already counted via original)
+        return !t.bossNotes?.startsWith('Auto-reflected');
+      }
       return t.bookId === activeBookId;
     });
     setTransactions(filtered);
@@ -73,11 +84,11 @@ export default function BossHome({ user, setAuthUser }) {
     const u = await getUsers();
     setUsersList(u);
     const b = await getBooks();
-    // Filter books by what user is allowed to see
-    if (user?.Role === 'Admin' || user?.AllowedBooks === 'ALL') {
+    // BUG-M10 FIX: Case-insensitive check for 'ALL'
+    if (user?.Role === 'Admin' || String(user?.AllowedBooks || '').toUpperCase() === 'ALL') {
       setBooks(b);
     } else {
-      const allowed = (user?.AllowedBooks || '').split(',').map(id => id.trim());
+      const allowed = (user?.AllowedBooks || '').split(',').map(id => id.trim()).filter(Boolean);
       setBooks(b.filter(book => allowed.includes(book.ID)));
     }
   };
@@ -143,14 +154,25 @@ export default function BossHome({ user, setAuthUser }) {
           Name: inlineStaffName || inlineStaffPhone,
           PIN: hashedPin,
           Role: 'Staff',
+          // BUG-H4 FIX: Don't overwrite — new inline staff starts with just this book
           AllowedBooks: newBook.ID,
           IsBlocked: 'FALSE'
         };
         updatedUsers.push(newUser);
       } else {
-         if (!selectedStaff.includes(inlineStaffPhone)) {
+        // Staff already exists — append new book to their AllowedBooks instead of overwriting
+        const staffIdx = updatedUsers.findIndex(u => u.Username === inlineStaffPhone || u.Phone === inlineStaffPhone);
+        if (staffIdx !== -1) {
+          const existing = updatedUsers[staffIdx];
+          let allowed = String(existing.AllowedBooks || '');
+          if (allowed.toUpperCase() !== 'ALL' && !allowed.split(',').map(x => x.trim()).includes(newBook.ID)) {
+            allowed = allowed ? `${allowed}, ${newBook.ID}` : newBook.ID;
+            updatedUsers[staffIdx] = { ...existing, AllowedBooks: allowed };
+          }
+          if (!selectedStaff.includes(inlineStaffPhone)) {
             selectedStaff.push(inlineStaffPhone);
-         }
+          }
+        }
       }
     }
 
@@ -180,13 +202,89 @@ export default function BossHome({ user, setAuthUser }) {
     setInlineStaffPin('');
     setShowInlineStaffForm(false);
 
-    // BUG-M7 FIX: Push books and users to Google Sheet so they persist across devices
+    // BUG-H6 FIX: Show user feedback if cloud push fails, don't silently swallow error
     try {
       await pushBooks(updatedBooks);
       await pushUsers(updatedUsers);
     } catch (e) {
-      console.warn('Could not sync new book to cloud:', e.message);
+      alert(`⚠️ Book "${newBookName}" was created locally but could not be synced to cloud: ${e.message}\n\nPlease press the Sync button when you have internet to push it.`);
     }
+  };
+
+  // ─── Delete Book ──────────────────────────────────────────────────────────
+  const handleDeleteBook = async () => {
+    if (!bookToDelete || !deletePin) return;
+    setDeleteError('');
+    setDeleting(true);
+    try {
+      // 1. Verify PIN against the boss user record
+      const { verifyPIN } = await import('../services/authUtils');
+      const users = await getUsers();
+      const bossUser = users.find(u =>
+        u.Role === 'Admin' &&
+        ((u.Username && String(u.Username).toLowerCase() === String(user?.Username || '').toLowerCase()) ||
+         (u.Phone && String(u.Phone) === String(user?.Phone || '')))
+      );
+      if (!bossUser) { setDeleteError('Boss account not found. Try syncing first.'); setDeleting(false); return; }
+      const pinOk = await verifyPIN(deletePin, String(bossUser.PIN));
+      if (!pinOk) { setDeleteError('Incorrect PIN. Please try again.'); setDeletePin(''); setDeleting(false); return; }
+
+      // 2. Handle transactions in the book
+      const allTx = await getTransactions();
+      let updatedTx;
+      if (deleteMode === 'move') {
+        // Move entries to Main Book
+        updatedTx = allTx.map(t =>
+          t.bookId === bookToDelete.ID ? { ...t, bookId: 'book_main' } : t
+        );
+      } else {
+        // Permanently erase entries in this book
+        updatedTx = allTx.filter(t => t.bookId !== bookToDelete.ID);
+      }
+      await saveTransactions(updatedTx);
+
+      // 3. Remove the book from books list
+      const updatedBooks = books.filter(b => b.ID !== bookToDelete.ID);
+      await saveBooks(updatedBooks);
+
+      // 4. Remove book from all staff AllowedBooks
+      const allUsers = await getUsers();
+      const updatedUsers = allUsers.map(u => {
+        if (!u.AllowedBooks || String(u.AllowedBooks).toUpperCase() === 'ALL') return u;
+        const allowed = String(u.AllowedBooks).split(',').map(x => x.trim()).filter(id => id !== bookToDelete.ID);
+        return { ...u, AllowedBooks: allowed.join(', ') || 'book_main' };
+      });
+      await saveUsers(updatedUsers);
+
+      // 5. Push to cloud
+      try {
+        await pushBooks(updatedBooks);
+        await pushUsers(updatedUsers);
+      } catch (e) {
+        console.warn('Cloud sync after delete failed:', e.message);
+      }
+
+      // 6. If active book was deleted, switch to Main Book
+      if (activeBookId === bookToDelete.ID) setActiveBookId('book_main');
+
+      setShowDeleteBook(false);
+      setBookToDelete(null);
+      setDeletePin('');
+      setDeleteMode('move');
+      await loadData();
+    } catch (err) {
+      setDeleteError('Failed: ' + err.message);
+    }
+    setDeleting(false);
+  };
+
+  const openDeleteModal = (e, book) => {
+    e.stopPropagation(); // prevent book from being selected
+    setBookToDelete(book);
+    setDeletePin('');
+    setDeleteMode('move');
+    setDeleteError('');
+    setShowDeleteBook(true);
   };
 
   const handleShareDailySummary = () => {
@@ -224,61 +322,57 @@ export default function BossHome({ user, setAuthUser }) {
     staffSummary[name].count++;
   });
 
-  // Removed chart processing logic to simplify Dashboard
-
   return (
-    <div className="container animate-fade-in pb-20" style={{ padding: '20px' }}>
-      <div style={{ textAlign: 'center', margin: '16px 0 24px 0' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--primary)', letterSpacing: '-0.5px', margin: '0 0 4px 0' }}>{settings.BrandName || 'ToCashBook'}</h1>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0', fontWeight: '500' }}>{settings.Tagline || 'Developed by Thosho Tech'}</p>
+    <div className="container animate-fade-in pb-20" style={{ padding: '16px' }}>
+      {/* ── Brand header ── */}
+      <div style={{ textAlign: 'center', margin: '12px 0 12px 0' }}>
+        <h1 style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--primary)', letterSpacing: '-0.5px', margin: '0 0 2px 0' }}>{settings.BrandName || 'ToCashBook'}</h1>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, fontWeight: '500' }}>{settings.Tagline || 'Developed by Thosho Tech'}</p>
       </div>
 
-      <div className="header glass" style={{ padding: '10px 16px', borderRadius: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)' }}>Welcome, {user?.Name || user?.Username || user?.Phone}</span>
-        
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <Link to="/entry" className="btn btn-primary desktop-only" style={{ padding: '6px 12px', textDecoration: 'none', fontSize: '0.85rem' }}>
-            <PlusCircle size={16} /> {t('dashboard.add_transaction')}
-          </Link>
-          <button onClick={handleShareDailySummary} className="btn btn-outline" style={{ padding: '6px 10px' }} title="Share Daily Summary">
-            <Share2 size={16} /> <span className="desktop-only" style={{ marginLeft: '4px', fontSize: '0.85rem' }}>Share</span>
-          </button>
-          <button onClick={handleSync} className="btn btn-outline" style={{ padding: '6px 10px' }} disabled={syncing}>
-            <RefreshCw size={16} className={syncing ? "animate-spin" : ""} />
-          </button>
-        </div>
-      </div>
-
-      {/* View Balance Toggle (Mobile/Tablet Only) */}
-      <div className="mobile-only" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-        <button 
-          onClick={() => setShowBalance(!showBalance)} 
-          className={`btn ${showBalance ? 'btn-outline' : 'btn-primary'}`} 
-          style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.875rem' }}
-        >
-          {showBalance ? <><EyeOff size={16} /> Hide Balance</> : <><Eye size={16} /> View Balance</>}
+      {/* ── Single compact strip: Share | Welcome | Add | Sync ── */}
+      <div className="header glass" style={{ padding: '8px 14px', borderRadius: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+        {/* Left — Share */}
+        <button onClick={handleShareDailySummary} className="btn btn-outline" style={{ padding: '7px 10px', flexShrink: 0 }} title="Share Daily Summary">
+          <Share2 size={16} />
         </button>
+
+        {/* Center — Welcome text */}
+        <span style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-primary)', textAlign: 'center', flex: 1 }}>
+          Welcome, {user?.Name || user?.Username || user?.Phone}
+        </span>
+
+        {/* Right — Add Entry (desktop only) + Sync */}
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+          <Link to="/entry" className="btn btn-primary desktop-only" style={{ padding: '6px 12px', textDecoration: 'none', fontSize: '0.82rem' }}>
+            <PlusCircle size={15} /> {t('dashboard.add_transaction')}
+          </Link>
+          <button onClick={handleSync} className="btn btn-outline" style={{ padding: '7px 10px' }} disabled={syncing}>
+            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
-      {/* Balance Cards - Hidden on mobile unless showBalance is true. Always shown on desktop via .desktop-only fallback if showBalance is false */}
-      <div className={`animate-fade-in ${showBalance ? '' : 'desktop-only'}`} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-          <div className="card glass" style={{ borderBottom: '4px solid var(--primary)' }}>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{t('dashboard.net_balance')}</div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'var(--primary)' }}>₹{balance.toFixed(2)}</div>
-          </div>
-          <div className="card glass" style={{ borderBottom: '4px solid var(--success)' }}>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ArrowUpRight size={16} className="text-success" /> {t('dashboard.cash_in')}
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--success)' }}>₹{totalIncome.toFixed(2)}</div>
-          </div>
-          <div className="card glass" style={{ borderBottom: '4px solid var(--danger)' }}>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ArrowDownRight size={16} className="text-danger" /> {t('dashboard.cash_out')}
-            </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--danger)' }}>₹{totalExpense.toFixed(2)}</div>
-          </div>
+      {/* ── Balance Cards — always visible ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+        <div className="card glass" style={{ borderBottom: '4px solid var(--primary)', padding: '14px' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>{t('dashboard.net_balance')}</div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 'bold', color: 'var(--primary)', lineHeight: 1.2 }}>₹{balance.toFixed(2)}</div>
         </div>
+        <div className="card glass" style={{ borderBottom: '4px solid var(--success)', padding: '14px' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <ArrowUpRight size={14} className="text-success" /> {t('dashboard.cash_in')}
+          </div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: 'var(--success)', lineHeight: 1.2 }}>₹{totalIncome.toFixed(2)}</div>
+        </div>
+        <div className="card glass" style={{ borderBottom: '4px solid var(--danger)', padding: '14px' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <ArrowDownRight size={14} className="text-danger" /> {t('dashboard.cash_out')}
+          </div>
+          <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: 'var(--danger)', lineHeight: 1.2 }}>₹{totalExpense.toFixed(2)}</div>
+        </div>
+      </div>
+
       <div style={{ marginBottom: '24px' }}>
         <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <BookOpen size={20} /> Your Cashbooks
@@ -306,10 +400,26 @@ export default function BossHome({ user, setAuthUser }) {
                 cursor: 'pointer', 
                 border: activeBookId === b.ID ? '2px solid var(--primary)' : '2px solid transparent',
                 transform: activeBookId === b.ID ? 'scale(1.02)' : 'none',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                position: 'relative'
               }}
             >
-              <h4 style={{ margin: '0 0 8px 0', color: activeBookId === b.ID ? 'var(--primary)' : 'inherit' }}>{b.Name}</h4>
+              {/* Delete button — only on sub-books, not Main Book */}
+              {b.ID !== 'book_main' && (
+                <button
+                  onClick={(e) => openDeleteModal(e, b)}
+                  title={`Delete "${b.Name}"`}
+                  style={{
+                    position: 'absolute', top: '8px', right: '8px',
+                    background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                    borderRadius: '6px', padding: '4px 6px', cursor: 'pointer',
+                    color: 'var(--danger)', display: 'flex', alignItems: 'center'
+                  }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+              <h4 style={{ margin: '0 0 8px 0', color: activeBookId === b.ID ? 'var(--primary)' : 'inherit', paddingRight: b.ID !== 'book_main' ? '28px' : '0' }}>{b.Name}</h4>
               <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{b.Description}</p>
             </div>
           ))}
@@ -501,6 +611,98 @@ export default function BossHome({ user, setAuthUser }) {
           </div>
         </div>
       )}
+      {/* ─── Delete Book Modal ─────────────────────────────────────── */}
+      {showDeleteBook && bookToDelete && (() => {
+        const allTx = transactions; // current loaded transactions
+        const bookEntryCount = allTx.filter(t => t.bookId === bookToDelete.ID).length;
+        return (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+            background: 'rgba(0,0,0,0.65)', zIndex: 2000, display: 'flex',
+            justifyContent: 'center', alignItems: 'center', padding: '16px'
+          }}>
+            <div className="card glass animate-fade-in" style={{
+              width: '100%', maxWidth: '420px', padding: '24px',
+              borderRadius: '16px', border: '2px solid var(--danger)'
+            }}>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <AlertTriangle size={24} color="var(--danger)" />
+                <h3 style={{ margin: 0, color: 'var(--danger)' }}>Delete Cashbook</h3>
+              </div>
+
+              {/* Warning */}
+              <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '0.88rem', lineHeight: '1.5' }}>
+                ⚠️ You are about to delete <strong>"{bookToDelete.Name}"</strong>.<br />
+                This book has <strong>{bookEntryCount} entries</strong>.<br />
+                <span style={{ color: 'var(--danger)', fontWeight: 600 }}>This action cannot be undone.</span>
+              </div>
+
+              {/* What to do with entries */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+                  What should happen to the {bookEntryCount} entries?
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: `2px solid ${deleteMode === 'move' ? 'var(--primary)' : 'var(--border-color)'}`, cursor: 'pointer', background: deleteMode === 'move' ? 'rgba(79,70,229,0.06)' : 'transparent' }}>
+                    <input type="radio" value="move" checked={deleteMode === 'move'} onChange={() => setDeleteMode('move')} style={{ accentColor: 'var(--primary)' }} />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>✅ Move to Main Book (Recommended)</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>All entries are preserved in Main Book. No data lost.</div>
+                    </div>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: `2px solid ${deleteMode === 'erase' ? 'var(--danger)' : 'var(--border-color)'}`, cursor: 'pointer', background: deleteMode === 'erase' ? 'rgba(239,68,68,0.06)' : 'transparent' }}>
+                    <input type="radio" value="erase" checked={deleteMode === 'erase'} onChange={() => setDeleteMode('erase')} style={{ accentColor: 'var(--danger)' }} />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--danger)' }}>🗑️ Delete entries permanently</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>All {bookEntryCount} entries will be erased forever. Cannot recover.</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* PIN confirmation */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  🔐 Enter your Boss PIN to confirm
+                </label>
+                <input
+                  type="password"
+                  value={deletePin}
+                  onChange={e => { setDeletePin(e.target.value); setDeleteError(''); }}
+                  placeholder="Enter your PIN"
+                  maxLength={10}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: `1.5px solid ${deleteError ? 'var(--danger)' : 'var(--border-color)'}`, background: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '1.1rem', letterSpacing: '4px', fontFamily: 'monospace' }}
+                  autoFocus
+                />
+                {deleteError && (
+                  <div style={{ color: 'var(--danger)', fontSize: '0.8rem', marginTop: '6px' }}>❌ {deleteError}</div>
+                )}
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => { setShowDeleteBook(false); setDeletePin(''); setDeleteError(''); }}
+                  className="btn btn-outline"
+                  style={{ flex: 1, padding: '12px' }}
+                  disabled={deleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteBook}
+                  className="btn"
+                  style={{ flex: 1, padding: '12px', background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 600, cursor: deleting || !deletePin ? 'not-allowed' : 'pointer', opacity: deleting || !deletePin ? 0.6 : 1 }}
+                  disabled={deleting || !deletePin}
+                >
+                  {deleting ? '⏳ Deleting...' : '🗑️ Delete Book'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

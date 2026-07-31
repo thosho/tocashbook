@@ -209,6 +209,7 @@ export const exportDatabase = async () => {
     transactions: await getTransactions(),
     categories: await getCategories(),
     books: await getBooks(),
+    settings: await getSettings(), // BUG-M7 FIX: Include settings in export
     apiLink: await getApiLink(),
     apiSecret: await getApiSecret()
   };
@@ -240,12 +241,15 @@ export const importDatabase = async (jsonData) => {
   if (data.transactions) await localforage.setItem('transactions', data.transactions);
   if (data.categories) await saveCategories(data.categories);
   if (data.books) await saveBooks(data.books);
+  if (data.settings) await setSettings(data.settings); // BUG-M7 FIX: Restore settings
   if (data.apiLink) await setApiLink(data.apiLink);
   if (data.apiSecret !== undefined) await setApiSecret(data.apiSecret);
   // Clear pending queues to avoid re-syncing already-imported data
   await localforage.setItem('pendingSync', []);
   await localforage.setItem('pendingEdits', []);
   await localforage.setItem('pendingDeletes', []);
+  // BUG-M8 FIX: Reset activeBookId to book_main so dashboard isn't blank
+  await localforage.setItem('activeBookId', 'book_main');
 };
 
 // ─── Settings ─────────────────────────────────────────────────────────────────

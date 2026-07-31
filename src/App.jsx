@@ -11,6 +11,7 @@ import Entries from './components/Entries';
 import SplashScreen from './components/SplashScreen';
 import { initDb, getSettings } from './services/localDb';
 import { AppProvider } from './context/AppContext';
+import PWAPrompt from './components/PWAPrompt';
 
 // ─── Session Persistence Helpers ──────────────────────────────────────────────
 // Use sessionStorage so session survives page refresh but clears on tab close.
@@ -159,6 +160,7 @@ function App() {
             />
           </Routes>
         </Router>
+        <PWAPrompt />
       </AppProvider>
     </>
   );

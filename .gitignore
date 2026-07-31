@@ -10,7 +10,19 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-electron
 *.local
+
+# Android / Capacitor build outputs (large binaries)
+android/app/build/
+android/build/
+android/.gradle/
+*.apk
+*.aab
+
+# Electron build outputs
+release/
+out/
 
 # Editor directories and files
 .vscode/*
