@@ -378,7 +378,7 @@ export default function BossHome({ user, setAuthUser }) {
               }}>
                 <div>
                   <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{t.category} {t.partyName ? `· ${t.partyName}` : ''}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.date} · by {t.user || 'Unknown'}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.date} · by {t.user || '👤 Staff'}</div>
                 </div>
                 <div style={{ fontWeight: '700', color: t.type === 'Income' ? 'var(--success)' : 'var(--danger)', fontSize: '1rem' }}>
                   {t.type === 'Income' ? '+' : '-'}₹{(t.amount || 0).toLocaleString()}
