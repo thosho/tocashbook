@@ -113,7 +113,7 @@ export default function StaffEntry({ user, setAuthUser }) {
     // BUG FIX #11: Case-insensitive filter for staff's own transactions
     setTransactions(
       trans
-        .filter(t => t.user?.toLowerCase() === (user.Name || user.Username || user.Phone)?.toLowerCase() && t.bookId === currentBookId)
+        .filter(t => String(t.user || '').toLowerCase() === String(user.Name || user.Username || user.Phone || '').toLowerCase() && t.bookId === currentBookId)
         .sort((a, b) => new Date(b.date) - new Date(a.date))
         .slice(0, 10)
     );
@@ -336,7 +336,7 @@ export default function StaffEntry({ user, setAuthUser }) {
   const handlePartySelect = (e) => {
     const selectedName = e.target.value;
     setPartyName(selectedName);
-    const match = uniqueParties.find(p => p.name.trim().toLowerCase() === selectedName.trim().toLowerCase());
+    const match = uniqueParties.find(p => String(p.name || '').trim().toLowerCase() === String(selectedName || '').trim().toLowerCase());
     if (match && match.phone && !partyPhone) {
       setPartyPhone(match.phone);
     }

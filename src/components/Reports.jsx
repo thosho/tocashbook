@@ -86,19 +86,19 @@ export default function Reports() {
 
   const getStaffName = (username) => {
     if (!username) return '—';
-    if (username.toLowerCase() === 'boss') return '👑 Boss';
-    // BUG-C3 FIX: Use Name field first, fall back to Username or raw value
-    const user = users.find(u =>
-      u.Name?.toLowerCase() === username.toLowerCase() ||
-      u.Username?.toLowerCase() === username.toLowerCase() ||
-      u.Phone?.toLowerCase() === username.toLowerCase()
+    const unameStr = String(username);
+    if (unameStr.toLowerCase() === 'boss') return '👑 Boss';
+    const match = users.find(u =>
+      String(u.Name || '').toLowerCase() === unameStr.toLowerCase() ||
+      String(u.Username || '').toLowerCase() === unameStr.toLowerCase() ||
+      String(u.Phone || '').toLowerCase() === unameStr.toLowerCase()
     );
-    return user ? (user.Name || user.Username || username) : username;
+    return match ? (match.Name || match.Username || match.Phone || username) : username;
   };
 
   // WhatsApp pre-fill: sends payment reminder for a transaction
   const handleWhatsApp = (t) => {
-    const phone = (t.partyPhone || '').replace(/\D/g, ''); // digits only
+    const phone = String(t.partyPhone || '').replace(/\D/g, ''); // digits only
     const amount = `₹${t.amount}`;
     const type = t.type === 'Income' ? 'received' : 'paid';
     const date = t.date;

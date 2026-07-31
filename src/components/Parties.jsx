@@ -112,8 +112,8 @@ export default function Parties({ user }) {
   };
 
   const filteredParties = parties.filter(p => 
-    String(p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-    String(p.phone || '').includes(searchTerm)
+    String(p.name || '').toLowerCase().includes(String(searchTerm || '').toLowerCase()) || 
+    String(p.phone || '').includes(String(searchTerm || ''))
   );
 
   const totalCashIn = filteredParties.reduce((sum, p) => sum + p.cashIn, 0);
@@ -291,7 +291,7 @@ export default function Parties({ user }) {
                     value={pbName} 
                     onChange={(e) => {
                       setPbName(e.target.value);
-                      const match = parties.find(p => p.name.toLowerCase() === e.target.value.toLowerCase());
+                      const match = parties.find(p => String(p.name || '').toLowerCase() === String(e.target.value || '').toLowerCase());
                       if (match && match.phone) setPbPhone(String(match.phone));
                     }} 
                     placeholder="Enter name" 
