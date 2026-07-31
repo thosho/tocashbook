@@ -349,6 +349,12 @@ export default function StaffEntry({ user, setAuthUser }) {
   };
 
   const handleLogout = () => {
+    // BUG-L3 FIX: Warn if there are pending unsynced entries before logout
+    if (pendingCount > 0) {
+      if (!window.confirm(`You have ${pendingCount} unsynced entr${pendingCount > 1 ? 'ies' : 'y'} pending. They are saved on this device but not yet uploaded. Logout anyway?`)) return;
+    } else {
+      if (!window.confirm('Are you sure you want to logout?')) return;
+    }
     setAuthUser(null);
     navigate('/');
   };

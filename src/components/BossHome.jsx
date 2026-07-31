@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getTransactions, getSettings, getBooks, getUsers, saveBooks, saveUsers } from '../services/localDb';
-import { fetchAllData, syncOfflineTransactions, syncPendingEdits, syncPendingDeletes } from '../services/sheetsApi';
+import { fetchAllData, syncOfflineTransactions, syncPendingEdits, syncPendingDeletes, pushUsers, pushBooks } from '../services/sheetsApi';
 import { hashPIN } from '../services/authUtils';
 import { 
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, 
@@ -129,7 +129,8 @@ export default function BossHome({ user, setAuthUser }) {
 
     // Handle inline new user creation
     if (showInlineStaffForm && inlineStaffPhone && inlineStaffPin) {
-      const exists = updatedUsers.find(u => u.Username === inlineStaffPhone);
+      // BUG-M5 FIX: Check by Phone OR Username to avoid duplicate staff
+      const exists = updatedUsers.find(u => u.Username === inlineStaffPhone || u.Phone === inlineStaffPhone);
       if (!exists) {
         const hashedPin = await hashPIN(inlineStaffPin);
         const newUser = {
@@ -173,10 +174,14 @@ export default function BossHome({ user, setAuthUser }) {
     setInlineStaffPhone('');
     setInlineStaffPin('');
     setShowInlineStaffForm(false);
-    
-    // Note: To sync these changes with the cloud, the user should ideally press Sync,
-    // but the backend needs pushUsers. For now, it's saved locally. 
-    // In a full cloud sync, we'd call pushBooks(updatedBooks) and pushUsers(updatedUsers) if implemented.
+
+    // BUG-M7 FIX: Push books and users to Google Sheet so they persist across devices
+    try {
+      await pushBooks(updatedBooks);
+      await pushUsers(updatedUsers);
+    } catch (e) {
+      console.warn('Could not sync new book to cloud:', e.message);
+    }
   };
 
   const handleShareDailySummary = () => {

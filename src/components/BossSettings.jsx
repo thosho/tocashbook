@@ -112,9 +112,11 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
     const updated = [...users, newEntry];
     setUsers(updated);
     setNewUser({ name: '', phone: '', pin: '' });
-    // BUG-02 FIX: Immediately save to localforage so staff can login right away
     const adminRecord = (await getUsers()).find(u => u.Role === 'Admin') || { ID: 'boss_1', Name: 'Admin', Role: 'Admin', IsActive: 'TRUE' };
-    await saveUsers([...updated, adminRecord]);
+    const allUsers = [...updated, adminRecord];
+    await saveUsers(allUsers);
+    // BUG-H1 FIX: Also push to Google Sheet so staff exists on all devices
+    try { await pushUsers(allUsers); } catch (e) { console.warn('Could not sync new staff to cloud:', e.message); }
   };
 
   const handleDeleteUser = async (id) => {
@@ -123,6 +125,8 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
     const adminRecord = (await getUsers()).find(u => u.Role === 'Admin') || { ID: 'boss_1', Name: 'Admin', Phone: 'boss', PIN: '1234', Role: 'Admin', IsActive: 'TRUE' };
     const allUsers = [...updated, adminRecord];
     await saveUsers(allUsers);
+    // BUG-H2 FIX: Push deletion to Google Sheet so staff cannot login from other devices
+    try { await pushUsers(allUsers); } catch (e) { console.warn('Could not sync staff deletion to cloud:', e.message); }
   };
 
   const handleAddCategory = async () => {
@@ -130,8 +134,9 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
     const updated = [...categories, { ID: 'c_' + Date.now(), Name: newCategory.name, Type: newCategory.type }];
     setCategories(updated);
     setNewCategory({ name: '', type: 'Income' });
-    // BUG-03 FIX: Immediately save to localforage so category appears in entry form
     await saveCategories(updated);
+    // BUG-H3 FIX: Push to Google Sheet so all devices see the new category
+    try { await pushCategories(updated); } catch (e) { console.warn('Could not sync new category to cloud:', e.message); }
   };
 
   // BUG FIX #12: Save categories to localforage immediately on delete
@@ -181,7 +186,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
         { Key: 'SocialMedia', Value: settings.SocialMedia || '' },
         { Key: 'Tagline', Value: settings.Tagline || '' },
         { Key: 'UpiId', Value: settings.UpiId || '' },
-        { Key: 'DateFormat', Value: settings.DateFormat || 'MM/DD/YYYY' },
+        { Key: 'DateFormat', Value: settings.DateFormat || 'DD/MM/YYYY' },
         { Key: 'OpeningBalance', Value: settings.OpeningBalance || '0' },
         { Key: 'SessionTimeout', Value: settings.SessionTimeout || '30' },
         { Key: 'NtfyTopic', Value: settings.NtfyTopic || '' }

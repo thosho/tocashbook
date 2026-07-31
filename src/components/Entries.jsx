@@ -12,6 +12,7 @@ export default function Entries() {
   const [transactions, setTransactions] = useState([]);
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [settings, setSettings] = useState({});
   const [syncing, setSyncing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleString());
 
@@ -25,20 +26,39 @@ export default function Entries() {
   const [selectedHistory, setSelectedHistory] = useState(null);
 
   useEffect(() => {
-    loadData();
+    // BUG-M3 FIX: Auto-sync on load so boss always sees latest entries
+    const autoSync = async () => {
+      setSyncing(true);
+      try {
+        await fetchAllData();
+        await syncOfflineTransactions();
+        await syncPendingEdits();
+      } catch (_) { /* silent fail — show cached data */ }
+      await loadData();
+      setSyncing(false);
+      setLastUpdated(new Date().toLocaleString());
+    };
+    autoSync();
   }, []);
 
   const loadData = async () => {
     setTransactions(await getTransactions());
     setUsers(await getUsers());
     setCategories(await getCategories());
+    const s = await getSettings();
+    setSettings(s || {});
   };
 
   const getStaffName = (username) => {
     if (!username) return '—';
-    if (username === 'boss') return 'Boss';
-    const user = users.find(u => u.Username?.toLowerCase() === username.toLowerCase());
-    return user ? user.Username : username;
+    if (username.toLowerCase() === 'boss') return '👑 Boss';
+    // BUG-C3 FIX: Use Name field first, fall back to Username or the raw value
+    const user = users.find(u =>
+      u.Name?.toLowerCase() === username.toLowerCase() ||
+      u.Username?.toLowerCase() === username.toLowerCase() ||
+      u.Phone?.toLowerCase() === username.toLowerCase()
+    );
+    return user ? (user.Name || user.Username || username) : username;
   };
 
   const handleRefresh = async () => {
@@ -55,11 +75,11 @@ export default function Entries() {
     setSyncing(false);
   };
 
-  // Full-text search + filter with running balance
+  // BUG-C2 FIX: Include entries with no bookId (old entries) + entries matching active book
   const filteredTx = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     let result = [...transactions]
-      .filter(t => t.bookId === activeBookId)
+      .filter(t => !t.bookId || t.bookId === activeBookId)
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .filter(t => {
         const typeMatch = filterType === 'all' || t.type === filterType;
@@ -83,17 +103,17 @@ export default function Entries() {
     return result;
   }, [transactions, searchQuery, filterType, filterMode, activeBookId, showRecentOnly]);
 
-  // Compute running balance for each row (chronological = oldest first)
+  // BUG-H4 FIX: Compute running balance starting from Opening Balance
   const runningBalance = useMemo(() => {
     const chronological = [...filteredTx].reverse();
-    let balance = 0;
+    let balance = parseFloat(settings.OpeningBalance) || 0;
     const balMap = {};
     chronological.forEach(t => {
       balance += t.type === 'Income' ? (t.amount || 0) : -(t.amount || 0);
       balMap[t.id] = balance;
     });
     return balMap;
-  }, [filteredTx]);
+  }, [filteredTx, settings]);
 
   const totalIn = filteredTx.filter(t => t.type === 'Income').reduce((a, b) => a + (b.amount || 0), 0);
   const totalOut = filteredTx.filter(t => t.type === 'Expense').reduce((a, b) => a + (b.amount || 0), 0);
@@ -120,7 +140,13 @@ export default function Entries() {
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       doc.text(`Date: ${t.date}`, 10, headerY);
-      doc.text(`Receipt #: ${t.id.replace('tx_', '').slice(-6)}`, 10, headerY + 6);
+      // BUG-L1 FIX: Use proper BRAND-YYMMDD-HHMMSS receipt number format
+      const parts = t.id.split('_');
+      const ts = parseInt(parts[1], 10);
+      const d = isNaN(ts) ? new Date() : new Date(ts);
+      const brand = (settings.BrandName || 'REC').replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
+      const receiptNum = `${brand}-${String(d.getFullYear()).slice(-2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`;
+      doc.text(`Receipt #: ${receiptNum}`, 10, headerY + 6);
       
       let amountY = headerY + 12;
       doc.line(10, amountY, 90, amountY);

@@ -47,7 +47,15 @@ export default function Reports() {
   const [chartMode, setChartMode] = useState('Expense');
 
   useEffect(() => {
-    loadData();
+    // BUG-M6 FIX: Auto-sync on load so reports always have latest data
+    const autoSync = async () => {
+      try {
+        const { fetchAllData } = await import('../services/sheetsApi');
+        await fetchAllData();
+      } catch (_) { /* silent fail */ }
+      await loadData();
+    };
+    autoSync();
   }, []);
 
   useEffect(() => {
@@ -76,9 +84,14 @@ export default function Reports() {
 
   const getStaffName = (username) => {
     if (!username) return '—';
-    if (username.toLowerCase() === 'boss') return 'Boss';
-    const user = users.find(u => u.Username?.toLowerCase() === username.toLowerCase());
-    return user ? user.Username : username;
+    if (username.toLowerCase() === 'boss') return '👑 Boss';
+    // BUG-C3 FIX: Use Name field first, fall back to Username or raw value
+    const user = users.find(u =>
+      u.Name?.toLowerCase() === username.toLowerCase() ||
+      u.Username?.toLowerCase() === username.toLowerCase() ||
+      u.Phone?.toLowerCase() === username.toLowerCase()
+    );
+    return user ? (user.Name || user.Username || username) : username;
   };
 
   // WhatsApp pre-fill: sends payment reminder for a transaction
