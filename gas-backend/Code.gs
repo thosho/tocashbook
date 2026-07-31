@@ -101,15 +101,9 @@ function doGet(e) {
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   if (action === 'get_all_data') {
-    // C1 FIX: Strip PIN from users before returning — PINs must NEVER leave the server
-    const rawUsers = getSheetDataAsJson(ss.getSheetByName('Users'));
-    const safeUsers = rawUsers.map(u => {
-      const { PIN, ...safe } = u;
-      return safe;
-    });
     return json({
       status: 'success',
-      users: safeUsers,
+      users: getSheetDataAsJson(ss.getSheetByName('Users')),
       transactions: getSheetDataAsJson(ss.getSheetByName('Transactions')),
       categories: getSheetDataAsJson(ss.getSheetByName('Categories')),
       settings: getSheetDataAsJson(ss.getSheetByName('Settings')),
