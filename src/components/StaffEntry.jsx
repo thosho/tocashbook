@@ -261,7 +261,7 @@ export default function StaffEntry({ user, setAuthUser }) {
       if (fileInputRef.current) fileInputRef.current.value = '';
       
       loadData();
-      handleSync(); // Attempt to sync immediately
+      await handleSync(); // Attempt to sync immediately; will call loadData() after to clear Pending badges
     }
   };
 
@@ -300,6 +300,8 @@ export default function StaffEntry({ user, setAuthUser }) {
     const count = await getPendingCount();
     setPendingCount(count);
     setSyncing(false);
+    // Refresh transaction list so "Pending" badges update to "Synced"
+    loadData();
   };
 
   const handleContactPicker = async () => {
