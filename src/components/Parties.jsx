@@ -5,7 +5,7 @@ import { useAppContext } from '../context/AppContext';
 import { Users, Search, ArrowUpRight, ArrowDownRight, Plus, X, Contact, BookOpen } from 'lucide-react';
 
 export default function Parties({ user }) {
-  const { activeBookId } = useAppContext();
+  const { activeBookId, setActiveBookId } = useAppContext();
   const [parties, setParties] = useState([]);
   const [books, setBooks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -177,18 +177,42 @@ export default function Parties({ user }) {
 
   return (
     <div className="container animate-fade-in pb-20">
-      <div className="header glass" style={{ padding: '16px 20px', borderRadius: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
+      <div className="header glass" style={{ padding: '16px 20px', borderRadius: '16px', marginBottom: '20px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+        <div style={{ flex: '1 1 auto' }}>
           <h2 style={{ fontSize: '1.25rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Users size={24} /> Customer Dashboard
+            <Users size={24} className="text-primary" /> Customer Dashboard
           </h2>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
-            {!activeBookId || activeBookId === 'book_main'
-              ? '📚 Consolidated — All cashbooks'
-              : `📖 ${books.find(b => b.ID === activeBookId)?.Name || 'Current Book'} only`}
-          </p>
+          {/* Cashbook Selector right below Customer Dashboard heading */}
+          {books.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '500' }}>Book:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <BookOpen size={15} className="text-primary" />
+                <select
+                  value={activeBookId || 'book_main'}
+                  onChange={(e) => setActiveBookId(e.target.value)}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    backgroundColor: 'var(--surface-color)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    minWidth: '130px'
+                  }}
+                >
+                  {books.map(b => (
+                    <option key={b.ID} value={b.ID}>{b.Name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
         </div>
-        <button onClick={handleOpenModal} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '8px 14px', fontSize: '0.875rem' }}>
+        <button onClick={handleOpenModal} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '10px 16px', fontSize: '0.875rem', flexShrink: 0, minHeight: '44px' }}>
           <Plus size={16} /> Set Balance
         </button>
       </div>

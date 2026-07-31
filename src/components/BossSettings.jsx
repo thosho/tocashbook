@@ -587,13 +587,15 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
 
       <div className="card glass mb-4">
         <h3 style={{ marginBottom: '16px' }}>Manage Staff</h3>
-        <div className="settings-grid-staff" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
-          <input type="text" placeholder="Staff Name" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)' }} />
-          <input type="tel" placeholder="Phone Number" value={newUser.phone} onChange={e => setNewUser({...newUser, phone: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)' }} />
-          <input type="text" placeholder="PIN Code" value={newUser.pin} onChange={e => setNewUser({...newUser, pin: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)' }} />
-          <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
-            <button className="btn btn-outline" onClick={handlePickContact} title="Pick from Contacts" style={{ flex: '1 1 auto', minHeight: '44px', padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6', fontWeight: '600', gap: '6px' }}><Contact size={18} /> Contact</button>
-            <button className="btn btn-primary" onClick={handleAddUser} title="Add Staff" style={{ flex: '1 1 auto', minHeight: '44px', padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Plus size={18} /> Add</button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
+            <input type="text" placeholder="Staff Name" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
+            <input type="tel" placeholder="Phone Number" value={newUser.phone} onChange={e => setNewUser({...newUser, phone: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
+            <input type="text" placeholder="PIN Code" value={newUser.pin} onChange={e => setNewUser({...newUser, pin: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%' }}>
+            <button className="btn btn-outline" onClick={handlePickContact} title="Pick from Contacts" style={{ minHeight: '44px', padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6', fontWeight: '600', gap: '6px', width: '100%', boxSizing: 'border-box' }}><Contact size={18} /> Contact</button>
+            <button className="btn btn-primary" onClick={handleAddUser} title="Add Staff" style={{ minHeight: '44px', padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: '100%', boxSizing: 'border-box' }}><Plus size={18} /> Add Staff</button>
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -612,13 +614,15 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
 
       <div className="card glass mb-4">
         <h3 style={{ marginBottom: '16px' }}>Manage Categories</h3>
-        <div className="settings-grid-cat" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
-          <input type="text" placeholder="Category Name" value={newCategory.name} onChange={e => setNewCategory({...newCategory, name: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)' }} />
-          <select value={newCategory.type} onChange={e => setNewCategory({...newCategory, type: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)' }}>
-            <option value="Income">Income (+)</option>
-            <option value="Expense">Expense (-)</option>
-          </select>
-          <button className="btn btn-primary" onClick={handleAddCategory} style={{ width: '100%', minHeight: '44px', padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Plus size={18} /> Add Category</button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <input type="text" placeholder="Category Name" value={newCategory.name} onChange={e => setNewCategory({...newCategory, name: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
+            <select value={newCategory.type} onChange={e => setNewCategory({...newCategory, type: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)', boxSizing: 'border-box' }}>
+              <option value="Income">Income (+)</option>
+              <option value="Expense">Expense (-)</option>
+            </select>
+          </div>
+          <button className="btn btn-primary" onClick={handleAddCategory} style={{ width: '100%', minHeight: '44px', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxSizing: 'border-box' }}><Plus size={18} /> Add Category</button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {categories.map(c => (
@@ -716,11 +720,11 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
       </button>
 
       {/* About Thosho Tech Section */}
-      <div className="card glass animate-fade-in" style={{ padding: '24px', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.25)', background: 'var(--surface-color)', boxShadow: '0 8px 24px rgba(59, 130, 246, 0.08)', borderRadius: '16px', marginBottom: '20px' }}>
+      <div className="animate-fade-in" style={{ padding: '24px', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.35)', backgroundColor: '#1e293b', color: '#f8fafc', boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)', borderRadius: '16px', marginBottom: '20px' }}>
         <h3 style={{ margin: '0 0 6px 0', fontSize: '1.2rem', fontWeight: '800', color: '#3b82f6', letterSpacing: '0.5px' }}>
           Thosho Tech
         </h3>
-        <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+        <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: '#cbd5e1', lineHeight: 1.5 }}>
           Engineering reliable, state-of-the-art fintech & retail software solutions for modern businesses.
         </p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', fontSize: '0.88rem' }}>
@@ -731,7 +735,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
             <Mail size={16} /> contact@thoshotech.com
           </a>
         </div>
-        <div style={{ marginTop: '16px', fontSize: '0.75rem', color: 'var(--text-secondary)', opacity: 0.8 }}>
+        <div style={{ marginTop: '16px', fontSize: '0.75rem', color: '#94a3b8', opacity: 0.9 }}>
           {APP_NAME} {APP_VERSION} · All Rights Reserved © {new Date().getFullYear()} Thosho Tech
         </div>
       </div>

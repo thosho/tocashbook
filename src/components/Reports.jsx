@@ -139,28 +139,65 @@ export default function Reports() {
     return `${m}/${d}/${y}`; // Default MM/DD/YYYY
   };
 
+  // Universal date parser handling YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY and ISO timestamps
+  const parseTxDate = (dateVal) => {
+    if (!dateVal) return null;
+    let s = String(dateVal).trim();
+    if (s.includes('T')) s = s.split('T')[0];
+    else if (s.includes(' ')) s = s.split(' ')[0];
+    
+    // YYYY-MM-DD
+    if (/^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}$/.test(s)) {
+      const parts = s.split(/[\/\-]/).map(Number);
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+    // DD/MM/YYYY or MM/DD/YYYY
+    if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(s)) {
+      const parts = s.split(/[\/\-]/).map(Number);
+      let y = parts[2];
+      if (y < 100) y += 2000;
+      if (parts[0] > 12) {
+        return new Date(y, parts[1] - 1, parts[0]);
+      } else if (parts[1] > 12) {
+        return new Date(y, parts[0] - 1, parts[1]);
+      } else {
+        // Standard DD/MM/YYYY in Indian accounting
+        return new Date(y, parts[1] - 1, parts[0]);
+      }
+    }
+    const parsed = new Date(dateVal);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  };
+
   const filteredTransactions = useMemo(() => {
     const now = new Date();
+    const todayStr = now.toDateString();
+
     return transactions.filter(t => {
       // Date Filter
-      if (!t.date) return false;
-      const txDate = new Date(String(t.date) + 'T00:00:00'); // force local timezone parse
+      if (!t.date && dateFilter !== 'all') return false;
+      const txDate = parseTxDate(t.date);
       let dateMatch = true;
       if (dateFilter === 'daily') {
-        dateMatch = !isNaN(txDate.getTime()) && txDate.toDateString() === now.toDateString();
+        dateMatch = txDate && txDate.toDateString() === todayStr;
       } else if (dateFilter === 'weekly') {
         const startOfWeek = new Date(now);
         const day = now.getDay();
         startOfWeek.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
         startOfWeek.setHours(0, 0, 0, 0);
-        dateMatch = !isNaN(txDate.getTime()) && txDate >= startOfWeek && txDate <= now;
+        const endOfNow = new Date(now);
+        endOfNow.setHours(23, 59, 59, 999);
+        dateMatch = txDate && txDate >= startOfWeek && txDate <= endOfNow;
       } else if (dateFilter === 'monthly') {
-        dateMatch = !isNaN(txDate.getTime()) && txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+        dateMatch = txDate && txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
       } else if (dateFilter === 'yearly') {
-        dateMatch = !isNaN(txDate.getTime()) && txDate.getFullYear() === now.getFullYear();
+        dateMatch = txDate && txDate.getFullYear() === now.getFullYear();
       } else if (dateFilter === 'custom') {
         if (!customFrom || !customTo) return false;
-        dateMatch = String(t.date) >= String(customFrom) && String(t.date) <= String(customTo);
+        const fromDate = parseTxDate(customFrom);
+        const toDate = parseTxDate(customTo);
+        if (toDate) toDate.setHours(23, 59, 59, 999);
+        dateMatch = txDate && fromDate && toDate && txDate >= fromDate && txDate <= toDate;
       }
 
       // Category Filter

@@ -321,6 +321,18 @@ export default function BossHome({ user, setAuthUser }) {
     staffSummary[name].count++;
   });
 
+  // Adaptive styling logic for balance cards when digits become larger
+  const getAdaptiveStyle = (val) => {
+    const digits = String(Math.abs(Math.round(val || 0))).length;
+    if (digits >= 8) return { padding: '8px 4px', fontSize: 'clamp(0.75rem, 2.6vw, 1.05rem)' };
+    if (digits >= 6) return { padding: '9px 6px', fontSize: 'clamp(0.82rem, 3.1vw, 1.2rem)' };
+    return { padding: '10px 8px', fontSize: 'clamp(0.88rem, 3.5vw, 1.4rem)' };
+  };
+
+  const balStyle = getAdaptiveStyle(balance);
+  const incStyle = getAdaptiveStyle(totalIncome);
+  const expStyle = getAdaptiveStyle(totalExpense);
+
   return (
     <div className="container animate-fade-in pb-20" style={{ padding: '16px' }}>
       {/* ── Brand row: [Sync] · Pasha · Personal CashBook · [Share] ── */}
@@ -384,23 +396,23 @@ export default function BossHome({ user, setAuthUser }) {
         )}
       </div>
 
-      {/* ── Balance Cards — always visible, responsive font ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '20px' }}>
-        <div className="card glass" style={{ borderBottom: '4px solid var(--primary)', padding: '10px 8px', minWidth: 0 }}>
+      {/* ── Balance Cards — adaptive padding and sizing for large numbers ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '20px' }}>
+        <div className="card glass" style={{ borderBottom: '4px solid var(--primary)', padding: balStyle.padding, minWidth: 0, transition: 'all 0.2s' }}>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('dashboard.net_balance')}</div>
-          <div style={{ fontSize: 'clamp(0.85rem, 3.5vw, 1.4rem)', fontWeight: 'bold', color: 'var(--primary)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{balance.toFixed(0)}</div>
+          <div style={{ fontSize: balStyle.fontSize, fontWeight: 'bold', color: 'var(--primary)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{balance.toFixed(0)}</div>
         </div>
-        <div className="card glass" style={{ borderBottom: '4px solid var(--success)', padding: '10px 8px', minWidth: 0 }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap' }}>
-            <ArrowUpRight size={12} className="text-success" /> {t('dashboard.cash_in')}
+        <div className="card glass" style={{ borderBottom: '4px solid var(--success)', padding: incStyle.padding, minWidth: 0, transition: 'all 0.2s' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <ArrowUpRight size={12} className="text-success" style={{ flexShrink: 0 }} /> {t('dashboard.cash_in')}
           </div>
-          <div style={{ fontSize: 'clamp(0.85rem, 3.5vw, 1.4rem)', fontWeight: 'bold', color: 'var(--success)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{totalIncome.toFixed(0)}</div>
+          <div style={{ fontSize: incStyle.fontSize, fontWeight: 'bold', color: 'var(--success)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{totalIncome.toFixed(0)}</div>
         </div>
-        <div className="card glass" style={{ borderBottom: '4px solid var(--danger)', padding: '10px 8px', minWidth: 0 }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap' }}>
-            <ArrowDownRight size={12} className="text-danger" /> {t('dashboard.cash_out')}
+        <div className="card glass" style={{ borderBottom: '4px solid var(--danger)', padding: expStyle.padding, minWidth: 0, transition: 'all 0.2s' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <ArrowDownRight size={12} className="text-danger" style={{ flexShrink: 0 }} /> {t('dashboard.cash_out')}
           </div>
-          <div style={{ fontSize: 'clamp(0.85rem, 3.5vw, 1.4rem)', fontWeight: 'bold', color: 'var(--danger)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{totalExpense.toFixed(0)}</div>
+          <div style={{ fontSize: expStyle.fontSize, fontWeight: 'bold', color: 'var(--danger)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{totalExpense.toFixed(0)}</div>
         </div>
       </div>
 
