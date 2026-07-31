@@ -297,7 +297,7 @@ export default function Entries() {
             </button>
           ))}
           
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', alignSelf: 'center', marginLeft: '8px', marginRight: '4px' }}>Sort:</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', alignSelf: 'center', marginLeft: '8px', marginRight: '4px' }}>Limit:</span>
           <button onClick={() => setShowRecentOnly(!showRecentOnly)}
             style={{
               padding: '4px 12px', borderRadius: '20px', border: 'none', cursor: 'pointer',
@@ -306,7 +306,7 @@ export default function Entries() {
               color: showRecentOnly ? 'white' : 'var(--text-secondary)',
               minHeight: '32px'
             }}>
-            <History size={14} /> Recent 15
+            <History size={14} /> Last 15 only
           </button>
         </div>
       </div>
@@ -404,8 +404,8 @@ export default function Entries() {
 
       {/* Edit History Modal */}
       {selectedHistory && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100, padding: '16px' }}>
-          <div className="card glass animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '20px' }}>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', overflowY: 'auto', zIndex: 100, padding: '12px 12px 80px 12px' }}>
+          <div className="card glass animate-fade-in" style={{ width: '100%', maxWidth: '400px', padding: '20px', flexShrink: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ margin: 0 }}>Edit History</h3>
               <button onClick={() => setSelectedHistory(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>

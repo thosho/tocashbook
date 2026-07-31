@@ -36,7 +36,7 @@ export default function Reports() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [partyFilter, setPartyFilter] = useState('all');
   const [staffFilter, setStaffFilter] = useState('all');
-  const [bookFilter, setBookFilter] = useState(activeBookId || 'all');
+  const [bookFilter, setBookFilter] = useState('all'); // BUG-R1 FIX: always default all, not active book
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [upiAppFilter, setUpiAppFilter] = useState('all');
   const [customFrom, setCustomFrom] = useState('');
@@ -69,18 +69,20 @@ export default function Reports() {
     setLocalSettings(await getSettings());
     setUsers(await getUsers());
     setBooks(await getBooks());
-
-    const parties = new Set();
-    allTrans.forEach(t => {
-      if (t.partyName) parties.add(t.partyName);
-    });
-    setUniqueParties(Array.from(parties));
   };
 
+  // BUG-R2 FIX: uniqueParties derived from book-filtered transactions (useMemo below)
   const transactions = useMemo(() => {
     if (bookFilter === 'all') return allTransactions;
     return allTransactions.filter(t => String(t.bookId) === String(bookFilter));
   }, [allTransactions, bookFilter]);
+
+  // BUG-R2 FIX: parties derived from book-filtered transactions
+  useEffect(() => {
+    const parties = new Set();
+    transactions.forEach(t => { if (t.partyName) parties.add(t.partyName); });
+    setUniqueParties(Array.from(parties).sort());
+  }, [transactions]);
 
   const getStaffName = (username) => {
     if (!username) return '—';
@@ -138,14 +140,13 @@ export default function Reports() {
     const now = new Date();
     return transactions.filter(t => {
       // Date Filter
-      const txDate = new Date(t.date);
+      const txDate = new Date(t.date + 'T00:00:00'); // force local timezone parse
       let dateMatch = true;
       if (dateFilter === 'daily') {
         dateMatch = txDate.toDateString() === now.toDateString();
       } else if (dateFilter === 'weekly') {
-        // Get start of current week (Monday)
         const startOfWeek = new Date(now);
-        const day = now.getDay(); // 0=Sun
+        const day = now.getDay();
         startOfWeek.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
         startOfWeek.setHours(0, 0, 0, 0);
         dateMatch = txDate >= startOfWeek && txDate <= now;
@@ -153,9 +154,12 @@ export default function Reports() {
         dateMatch = txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
       } else if (dateFilter === 'yearly') {
         dateMatch = txDate.getFullYear() === now.getFullYear();
-      } else if (dateFilter === 'custom' && customFrom && customTo) {
+      } else if (dateFilter === 'custom') {
+        // BUG-R4 FIX: if dates not set, show nothing rather than everything
+        if (!customFrom || !customTo) return false;
         dateMatch = t.date >= customFrom && t.date <= customTo;
       }
+      // dateFilter === 'all': dateMatch stays true = show all
 
       // Category Filter
       let catMatch = true;
@@ -204,7 +208,7 @@ export default function Reports() {
     staffSummary[name].count++;
   });
 
-  // Unique staff list
+  // BUG-R3 FIX: uniqueStaff from book-filtered transactions
   const uniqueStaff = Array.from(new Set(transactions.map(t => t.user).filter(Boolean)));
 
   // Doughnut Chart Data (by Category) based on FILTERED transactions
@@ -344,9 +348,12 @@ export default function Reports() {
         const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         titleStr = `${formatDate(lastWeek.toISOString().split('T')[0])} to ${formatDate(now.toISOString().split('T')[0])}`;
       } else if (dateFilter === 'monthly') {
-        titleStr = now.toLocaleString('default', { month: 'long', year: 'numeric' }); // e.g. July 2026
+        titleStr = now.toLocaleString('default', { month: 'long', year: 'numeric' });
       } else if (dateFilter === 'yearly') {
-        titleStr = now.getFullYear().toString(); // e.g. 2026
+        titleStr = now.getFullYear().toString();
+      } else if (dateFilter === 'custom' && customFrom && customTo) {
+        // BUG-R7 FIX: show actual custom date range in PDF
+        titleStr = `${formatDate(customFrom)} to ${formatDate(customTo)}`;
       } else {
         titleStr = 'All Time';
       }
@@ -396,7 +403,8 @@ export default function Reports() {
       doc.text(`Total No. of entries: ${filteredTransactions.length}`, 14, currentY);
 
       // Table Data preparation
-      let runningBalance = 0;
+      // BUG-R5 FIX: Start running balance from Opening Balance, not zero
+      let runningBalance = parseFloat(settings?.OpeningBalance) || 0;
       const sortedTx = [...filteredTransactions].sort((a,b) => new Date(a.date) - new Date(b.date));
 
       const tableData = sortedTx.map(t => {
@@ -563,7 +571,8 @@ export default function Reports() {
             <label>Filter by Staff</label>
             <select value={staffFilter} onChange={(e) => setStaffFilter(e.target.value)}>
               <option value="all">All Staff</option>
-              {uniqueStaff.map((s, i) => <option key={i} value={s}>{s === 'boss' ? '👑 Boss' : s}</option>)}
+              {/* BUG-R3 FIX: show display name in dropdown */}
+              {uniqueStaff.map((s, i) => <option key={i} value={s}>{getStaffName(s)}</option>)}
             </select>
           </div>
           <div className="input-group">
@@ -642,7 +651,7 @@ export default function Reports() {
                   .sort((a, b) => (b[1].income + b[1].expense) - (a[1].income + a[1].expense))
                   .map(([name, data]) => (
                     <tr key={name} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '8px', fontWeight: '600' }}>{name === 'boss' ? '👑 Boss' : name}</td>
+                      <td style={{ padding: '8px', fontWeight: '600' }}>{getStaffName(name)}</td>
                       <td style={{ padding: '8px', textAlign: 'right', color: 'var(--success)', fontWeight: '600' }}>₹{data.income.toLocaleString()}</td>
                       <td style={{ padding: '8px', textAlign: 'right', color: 'var(--danger)', fontWeight: '600' }}>₹{data.expense.toLocaleString()}</td>
                       <td style={{ padding: '8px', textAlign: 'right' }}>{data.count}</td>
