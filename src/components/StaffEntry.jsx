@@ -5,6 +5,9 @@ import { Camera, Plus, Minus, Send, RefreshCw, LogOut, Edit3, AlertCircle, Repea
 import { jsPDF } from "jspdf";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 // BUG FIX #10: Get today's date in LOCAL timezone (not UTC)
 const getLocalDateString = () => {
@@ -458,11 +461,27 @@ export default function StaffEntry({ user, setAuthUser }) {
       doc.text(linkText, 50, footerY + 8, { align: "center" });
       doc.link(linkX, footerY + 5, textWidth, 5, { url: "https://thoshotech.com" });
 
+      const fileName = `Receipt_${t.partyName || t.id}.pdf`;
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const pdfBase64 = doc.output('datauristring').split(',')[1];
+          const result = await Filesystem.writeFile({ path: fileName, data: pdfBase64, directory: Directory.Cache });
+          if (!downloadOnly && (await Share.canShare()).value) {
+            await Share.share({ title: 'Payment Receipt', text: `Payment Receipt for Rs. ${t.amount}`, url: result.uri });
+          } else {
+            alert(`✅ Receipt saved to mobile device storage: ${fileName}`);
+          }
+          return;
+        } catch (e) {
+          console.error("Capacitor receipt saving error:", e);
+        }
+      }
+
       const pdfBlob = doc.output('blob');
-      const file = new File([pdfBlob], `Receipt_${t.partyName || t.id}.pdf`, { type: 'application/pdf' });
+      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
       
       if (downloadOnly) {
-        doc.save(`Receipt_${t.partyName || t.id}.pdf`);
+        doc.save(fileName);
         return;
       }
       
@@ -473,7 +492,7 @@ export default function StaffEntry({ user, setAuthUser }) {
           text: `Payment Receipt for Rs. ${t.amount}`
         });
       } else {
-        doc.save(`Receipt_${t.partyName || t.id}.pdf`);
+        doc.save(fileName);
       }
     } catch (err) {
       alert("Failed to share receipt: " + err.message);

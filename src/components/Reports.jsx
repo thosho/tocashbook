@@ -115,9 +115,12 @@ export default function Reports() {
     msgText += `Please contact us if you have any questions.\n\nThank you! 🙏`;
     
     const msg = encodeURIComponent(msgText);
-    const url = phone
+    let url = phone
       ? `https://wa.me/${phone}?text=${msg}`
       : `https://wa.me/?text=${msg}`;
+    if (Capacitor.isNativePlatform() && phone) {
+      url = `whatsapp://send?phone=${phone}&text=${msg}`;
+    }
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -403,9 +406,13 @@ export default function Reports() {
       doc.text(`Total No. of entries: ${filteredTransactions.length}`, 14, currentY);
 
       // Table Data preparation
-      // BUG-R5 FIX: Start running balance from Opening Balance, not zero
-      let runningBalance = parseFloat(settings?.OpeningBalance) || 0;
-      const sortedTx = [...filteredTransactions].sort((a,b) => new Date(a.date) - new Date(b.date));
+      // BUG-R5 & G1 FIX: Start running balance from Opening Balance only for Main Book / All
+      let runningBalance = (bookFilter === 'all' || bookFilter === 'book_main') ? (parseFloat(settings?.OpeningBalance) || 0) : 0;
+      const sortedTx = [...filteredTransactions].sort((a,b) => {
+        const diff = new Date(a.date) - new Date(b.date);
+        if (diff !== 0) return diff;
+        return String(a.id).localeCompare(String(b.id)); // G2 tie-breaker
+      });
 
       const tableData = sortedTx.map(t => {
         if (t.type === 'Income') runningBalance += t.amount;

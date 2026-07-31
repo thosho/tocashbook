@@ -1,4 +1,7 @@
 import localforage from 'localforage';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 localforage.config({
   name: 'ToCashbook',
@@ -213,11 +216,35 @@ export const exportDatabase = async () => {
     apiLink: await getApiLink(),
     apiSecret: await getApiSecret()
   };
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+  const jsonString = JSON.stringify(data);
+  const dateStr = new Date().toISOString().split('T')[0];
+  const fileName = `tocashbook_backup_${dateStr}.json`;
+
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const savedFile = await Filesystem.writeFile({
+        path: fileName,
+        data: jsonString,
+        directory: Directory.Cache,
+        encoding: 'utf8'
+      });
+      if ((await Share.canShare()).value) {
+        await Share.share({
+          title: 'ToCashBook Backup',
+          text: 'Here is your ToCashBook backup file.',
+          url: savedFile.uri
+        });
+      }
+      return;
+    } catch (e) {
+      console.error('Capacitor backup save/share error, falling back to Web:', e);
+    }
+  }
+
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonString);
   const downloadAnchorNode = document.createElement('a');
   downloadAnchorNode.setAttribute("href", dataStr);
-  const dateStr = new Date().toISOString().split('T')[0];
-  downloadAnchorNode.setAttribute("download", `tocashbook_backup_${dateStr}.json`);
+  downloadAnchorNode.setAttribute("download", fileName);
   document.body.appendChild(downloadAnchorNode);
   downloadAnchorNode.click();
   downloadAnchorNode.remove();

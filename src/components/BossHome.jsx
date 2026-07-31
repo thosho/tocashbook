@@ -287,6 +287,12 @@ export default function BossHome({ user, setAuthUser }) {
     setShowDeleteBook(true);
   };
 
+  // Calculations (Hoisted above handlers & G1 sub-book fix applied)
+  const openingBalance = (!activeBookId || activeBookId === 'book_main') ? (parseFloat(settings.OpeningBalance) || 0) : 0;
+  const totalIncome = transactions.filter(t => t.type === 'Income').reduce((acc, curr) => acc + (curr.amount || 0), 0);
+  const totalExpense = transactions.filter(t => t.type === 'Expense').reduce((acc, curr) => acc + (curr.amount || 0), 0);
+  const balance = openingBalance + totalIncome - totalExpense;
+
   const handleShareDailySummary = () => {
     const today = new Date();
     const y = today.getFullYear();
@@ -296,21 +302,13 @@ export default function BossHome({ user, setAuthUser }) {
     const todayTx = transactions.filter(t => t.date === todayStr);
     const todayIncome = todayTx.filter(t => t.type === 'Income').reduce((a, b) => a + (b.amount || 0), 0);
     const todayExpense = todayTx.filter(t => t.type === 'Expense').reduce((a, b) => a + (b.amount || 0), 0);
-    // M1 FIX: Renamed to avoid duplicate 'const balance' with line 186
-    const currentBalance = (parseFloat(settings.OpeningBalance) || 0) + totalIncome - totalExpense;
-    const text = `📊 *${settings.BrandName || 'Business'} — Daily Summary*\n📅 Date: ${todayStr}\n\n✅ Cash In Today: ₹${todayIncome.toLocaleString()}\n❌ Cash Out Today: ₹${todayExpense.toLocaleString()}\n💰 Net Today: ₹${(todayIncome - todayExpense).toLocaleString()}\n\n📦 Total Entries Today: ${todayTx.length}\n💰 Balance: ₹${currentBalance.toLocaleString()}\n\n_Powered by ToCashBook_`;
+    const text = `📊 *${settings.BrandName || 'Business'} — Daily Summary*\n📅 Date: ${todayStr}\n\n✅ Cash In Today: ₹${todayIncome.toLocaleString()}\n❌ Cash Out Today: ₹${todayExpense.toLocaleString()}\n💰 Net Today: ₹${(todayIncome - todayExpense).toLocaleString()}\n\n📦 Total Entries Today: ${todayTx.length}\n💰 Balance: ₹${balance.toLocaleString()}\n\n_Powered by ToCashBook_`;
     if (navigator.share) {
       navigator.share({ title: 'Daily Cash Summary', text });
     } else {
       navigator.clipboard.writeText(text).then(() => alert('Daily summary copied to clipboard!'));
     }
   };
-
-  // Calculations
-  const openingBalance = parseFloat(settings.OpeningBalance) || 0;
-  const totalIncome = transactions.filter(t => t.type === 'Income').reduce((acc, curr) => acc + (curr.amount || 0), 0);
-  const totalExpense = transactions.filter(t => t.type === 'Expense').reduce((acc, curr) => acc + (curr.amount || 0), 0);
-  const balance = openingBalance + totalIncome - totalExpense;
 
   // Staff-wise summary
   const staffSummary = {};
@@ -481,7 +479,11 @@ export default function BossHome({ user, setAuthUser }) {
           <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px 0' }}>No entries yet. Staff entries will appear here after sync.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {[...transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10).map(t => (
+            {[...transactions].sort((a, b) => {
+              const diff = new Date(b.date) - new Date(a.date);
+              if (diff !== 0) return diff;
+              return String(b.id).localeCompare(String(a.id));
+            }).slice(0, 10).map(t => (
               <div key={t.id} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 padding: '10px 12px', borderRadius: '10px',

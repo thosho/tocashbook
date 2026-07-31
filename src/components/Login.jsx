@@ -80,11 +80,12 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
       return;
     }
 
-    // Find user by Phone, Username, or Name (case-insensitive)
+    // Find user by Phone, Username, or Name (case-insensitive & safe against undefined)
+    const cleanUsername = String(username).trim().toLowerCase();
     const user = users.find(u => 
-      (u.Phone && String(u.Phone).toLowerCase() === username.toLowerCase()) ||
-      (u.Username && String(u.Username).toLowerCase() === username.toLowerCase()) ||
-      (u.Name && String(u.Name).toLowerCase() === username.toLowerCase())
+      String(u.Phone || '').trim().toLowerCase() === cleanUsername ||
+      String(u.Username || '').trim().toLowerCase() === cleanUsername ||
+      String(u.Name || '').trim().toLowerCase() === cleanUsername
     );
     if (!user) { setError('Invalid phone/username or PIN'); return; }
     if (user.IsActive === 'FALSE' || user.IsActive === false) {
@@ -121,6 +122,14 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
   };
 
   const handleSwitchBranch = async (branch) => {
+    const pSync = (await localforage.getItem('pendingSync')) || [];
+    const pEdits = (await localforage.getItem('pendingEdits')) || [];
+    const pDeletes = (await localforage.getItem('pendingDeletes')) || [];
+    if (pSync.length > 0 || pEdits.length > 0 || pDeletes.length > 0) {
+      setError('⚠️ You have unsynced offline transactions! Please connect to the internet and sync before switching branches.');
+      return;
+    }
+
     setLoading(true);
     try {
       await setApiLink(branch.url);

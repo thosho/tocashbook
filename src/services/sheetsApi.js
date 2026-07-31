@@ -135,13 +135,13 @@ export const editTransactionAPI = async (transaction, editMetadata) => {
         editMetadata
       })
     });
+    if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+    const result = await response.json();
+    if (result.status !== 'success') {
+      throw new Error(result.error || "Server failed to update the transaction.");
+    }
   } catch (error) {
-    throw new Error("Could not connect to Google Spreadsheet: " + error.message);
-  }
-  
-  const result = await response.json();
-  if (result.status !== 'success') {
-    throw new Error(result.error || "Server failed to update the transaction.");
+    throw new Error("Could not complete edit on Google Spreadsheet: " + error.message);
   }
 };
 
@@ -264,10 +264,11 @@ export const deleteTransactionAPI = async (txId, deletedBy, reason) => {
       method: 'POST',
       body: JSON.stringify({ action: 'delete_transaction', secret, txId, deletedBy, reason })
     });
+    if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
     const result = await response.json();
     if (result.status !== 'success') throw new Error(result.error || 'Server failed to delete the transaction.');
   } catch (error) {
-    throw new Error('Could not connect to Google Spreadsheet: ' + error.message);
+    throw new Error('Could not delete transaction on server: ' + error.message);
   }
 };
 

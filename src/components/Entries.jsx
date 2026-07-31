@@ -5,6 +5,9 @@ import { List, RefreshCw, Clock, Edit3, Info, X, Search, Filter, AlertCircle, Hi
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { jsPDF } from "jspdf";
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 export default function Entries() {
   const navigate = useNavigate();
@@ -86,7 +89,11 @@ export default function Entries() {
         }
         return t.bookId === activeBookId;
       })
-      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .sort((a, b) => {
+        const diff = new Date(b.date) - new Date(a.date);
+        if (diff !== 0) return diff;
+        return String(b.id).localeCompare(String(a.id));
+      })
       .filter(t => {
         const typeMatch = filterType === 'all' || t.type === filterType;
         const modeMatch = filterMode === 'all' || (t.paymentMode || 'Cash') === filterMode;
@@ -121,9 +128,14 @@ export default function Entries() {
         }
         return t.bookId === activeBookId;
       })
-      .sort((a, b) => new Date(a.date) - new Date(b.date)); // oldest first
+      .sort((a, b) => {
+        const diff = new Date(a.date) - new Date(b.date);
+        if (diff !== 0) return diff;
+        return String(a.id).localeCompare(String(b.id));
+      });
 
-    let balance = parseFloat(settings.OpeningBalance) || 0;
+    // G1 FIX: only add global opening balance if Main Book is selected
+    let balance = (!activeBookId || activeBookId === 'book_main') ? (parseFloat(settings.OpeningBalance) || 0) : 0;
     const balMap = {};
     allBookTx.forEach(t => {
       balance += t.type === 'Income' ? (t.amount || 0) : -(t.amount || 0);
@@ -213,11 +225,27 @@ export default function Entries() {
       doc.text(linkText, 50, footerY + 8, { align: "center" });
       doc.link(linkX, footerY + 5, textWidth, 5, { url: "https://thoshotech.com" });
 
+      const fileName = `Receipt_${t.partyName || t.id}.pdf`;
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const pdfBase64 = doc.output('datauristring').split(',')[1];
+          const result = await Filesystem.writeFile({ path: fileName, data: pdfBase64, directory: Directory.Cache });
+          if (!downloadOnly && (await Share.canShare()).value) {
+            await Share.share({ title: 'Payment Receipt', text: `Payment Receipt for Rs. ${t.amount}`, url: result.uri });
+          } else {
+            alert(`✅ Receipt saved to mobile device storage: ${fileName}`);
+          }
+          return;
+        } catch (e) {
+          console.error("Capacitor receipt saving error:", e);
+        }
+      }
+
       const pdfBlob = doc.output('blob');
-      const file = new File([pdfBlob], `Receipt_${t.partyName || t.id}.pdf`, { type: 'application/pdf' });
+      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
       
       if (downloadOnly) {
-        doc.save(`Receipt_${t.partyName || t.id}.pdf`);
+        doc.save(fileName);
         return;
       }
       
@@ -228,7 +256,7 @@ export default function Entries() {
           text: `Payment Receipt for Rs. ${t.amount}`
         });
       } else {
-        doc.save(`Receipt_${t.partyName || t.id}.pdf`);
+        doc.save(fileName);
       }
     } catch (err) {
       alert("Failed to share receipt: " + err.message);

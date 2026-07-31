@@ -61,8 +61,8 @@ export default function Parties({ user }) {
     const partyMap = {};
 
     filteredTransactions.forEach(t => {
-      if (!t.partyName || !t.partyName.trim()) return;
-      const displayName = t.partyName.trim();
+      if (!t.partyName || !String(t.partyName).trim()) return;
+      const displayName = String(t.partyName).trim();
       const key = displayName.toLowerCase();
       
       if (!partyMap[key]) {
@@ -163,21 +163,7 @@ export default function Parties({ user }) {
       
       await addTransaction(newTx);
 
-      // ACCOUNTING RULE: If the selected book is NOT Main Book,
-      // also auto-record it in Main Book so the General Ledger always has a complete picture.
-      // The copy is tagged so we can skip double-counting when viewing Main Book.
-      if (targetBookId !== 'book_main') {
-        const mainBookCopy = {
-          ...newTx,
-          id: generateTxId(),
-          bookId: 'book_main',
-          bossNotes: `Auto-reflected from ${bookName} — Opening Balance for ${String(pbName || '').trim()}`,
-          remarks: (String(pbRemarks || '').trim() || `Opening Balance — ${pbType}`) + ` [from ${bookName}]`,
-          synced: false
-        };
-        await addTransaction(mainBookCopy);
-      }
-
+      // Note: No duplicate row created; Main Book operates as General Ledger aggregating all sub-books cleanly without duplicate records drifting out of sync.
       if (navigator.onLine) {
         await syncOfflineTransactions();
       }
@@ -375,7 +361,7 @@ export default function Parties({ user }) {
                   </select>
                   {pbBookId !== 'book_main' && (
                     <div style={{ fontSize: '0.72rem', color: 'var(--primary)', marginTop: '6px', padding: '8px 10px', background: 'rgba(79,70,229,0.08)', borderRadius: '8px', lineHeight: '1.4' }}>
-                      ✅ Entry will be saved in <strong>{books.find(b => b.ID === pbBookId)?.Name}</strong> AND automatically reflected in <strong>Main Book</strong> for full visibility.
+                      ✅ Entry will be saved in <strong>{books.find(b => b.ID === pbBookId)?.Name}</strong> and automatically included when viewing <strong>Main Book (General Ledger)</strong>.
                     </div>
                   )}
                 </div>

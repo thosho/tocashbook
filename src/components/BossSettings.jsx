@@ -7,6 +7,9 @@ import { Plus, Trash2, Download, Upload, Save, Sun, Moon, Monitor, Bell, BellOff
 import html2canvas from 'html2canvas';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 export default function BossSettings({ setSessionTimeout, setAuthUser }) {
   const { t } = useTranslation();
@@ -87,6 +90,26 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
       const dataUrl = canvas.toDataURL('image/png');
       const blob = await (await fetch(dataUrl)).blob();
       
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const savedFile = await Filesystem.writeFile({
+            path: `business_card_${Date.now()}.png`,
+            data: dataUrl,
+            directory: Directory.Cache
+          });
+          if ((await Share.canShare()).value) {
+            await Share.share({
+              title: settings.BrandName || 'Business Card',
+              text: `Here is our business card for ${settings.BrandName || 'ToCashbook'}!`,
+              url: savedFile.uri
+            });
+          }
+          return;
+        } catch (e) {
+          console.error('Capacitor card share error, falling back:', e);
+        }
+      }
+
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'card.png', { type: 'image/png' })] })) {
         await navigator.share({
           title: settings.BrandName,
@@ -106,7 +129,15 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
   };
 
   const handleAddUser = async () => {
+    if (!navigator.onLine) {
+      alert("⚠️ You must be online to add new staff members so accounts sync with Google Sheets!");
+      return;
+    }
     if (!newUser.phone || !newUser.pin) return;
+    if (users.some(u => String(u.Phone || '').trim() === String(newUser.phone).trim())) {
+      alert("⚠️ An account with this phone number already exists!");
+      return;
+    }
     const hashedPIN = await hashPIN(newUser.pin);
     const newEntry = { ID: 'u_' + Date.now(), Name: newUser.name, Phone: newUser.phone, Username: newUser.phone, PIN: hashedPIN, Role: 'Staff', IsActive: 'TRUE' };
     const updated = [...users, newEntry];
@@ -120,6 +151,10 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
   };
 
   const handleDeleteUser = async (id) => {
+    if (!navigator.onLine) {
+      alert("⚠️ You must be online to manage user accounts!");
+      return;
+    }
     const updated = users.filter(u => u.ID !== id);
     setUsers(updated);
     const adminRecord = (await getUsers()).find(u => u.Role === 'Admin') || { ID: 'boss_1', Name: 'Admin', Phone: 'boss', PIN: '1234', Role: 'Admin', IsActive: 'TRUE' };
@@ -130,6 +165,10 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
   };
 
   const handleAddCategory = async () => {
+    if (!navigator.onLine) {
+      alert("⚠️ You must be online to add categories so they sync with Google Sheets!");
+      return;
+    }
     if (!newCategory.name) return;
     const updated = [...categories, { ID: 'c_' + Date.now(), Name: newCategory.name, Type: newCategory.type }];
     setCategories(updated);
