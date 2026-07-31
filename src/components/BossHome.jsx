@@ -346,17 +346,46 @@ export default function BossHome({ user, setAuthUser }) {
         </button>
       </div>
 
-      {/* Welcome below tagline */}
-      <div style={{ textAlign: 'center', padding: '4px 0 12px 0', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>
-        Welcome, {user?.Name || user?.Username || user?.Phone}
-        {/* Desktop-only add entry link */}
-        <Link to="/entry" className="btn btn-primary desktop-only" style={{ padding: '5px 12px', textDecoration: 'none', fontSize: '0.8rem', marginLeft: '12px', verticalAlign: 'middle' }}>
-          <PlusCircle size={14} /> {t('dashboard.add_transaction')}
-        </Link>
+      {/* Welcome & Header Cashbook Selector */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '8px 4px 14px 4px', borderBottom: '1px solid var(--border-color)', marginBottom: '14px' }}>
+        <div style={{ fontSize: '0.88rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+          Welcome, {user?.Name || user?.Username || user?.Phone}
+          {/* Desktop-only add entry link */}
+          <Link to="/entry" className="btn btn-primary desktop-only" style={{ padding: '5px 12px', textDecoration: 'none', fontSize: '0.8rem', marginLeft: '12px', verticalAlign: 'middle' }}>
+            <PlusCircle size={14} /> {t('dashboard.add_transaction')}
+          </Link>
+        </div>
+
+        {/* Header Cashbook Selector */}
+        {books.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <BookOpen size={16} className="text-primary" />
+            <select
+              value={activeBookId}
+              onChange={(e) => setActiveBookId(e.target.value)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--surface-color)',
+                color: 'var(--text-primary)',
+                fontSize: '0.85rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                outline: 'none',
+                minWidth: '140px'
+              }}
+            >
+              {books.map(b => (
+                <option key={b.ID} value={b.ID}>{b.Name}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* ── Balance Cards — always visible, responsive font ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '20px' }}>
         <div className="card glass" style={{ borderBottom: '4px solid var(--primary)', padding: '10px 8px', minWidth: 0 }}>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('dashboard.net_balance')}</div>
           <div style={{ fontSize: 'clamp(0.85rem, 3.5vw, 1.4rem)', fontWeight: 'bold', color: 'var(--primary)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{balance.toFixed(0)}</div>
@@ -376,71 +405,107 @@ export default function BossHome({ user, setAuthUser }) {
       </div>
 
       <div style={{ marginBottom: '24px' }}>
-        <h3 style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <BookOpen size={20} /> Your Cashbooks
+        <h3 style={{ fontSize: '1.05rem', fontWeight: '700', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
+          <BookOpen size={18} className="text-primary" /> Your Cashbooks
         </h3>
 
-        {/* Cashbooks Grid — always visible */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
-          {books.map(b => (
-            <div 
-              key={b.ID} 
-              onClick={() => setActiveBookId(b.ID)}
-              className="card glass" 
-              style={{ 
-                cursor: 'pointer', 
-                border: activeBookId === b.ID ? '2px solid var(--primary)' : '2px solid transparent',
-                transform: activeBookId === b.ID ? 'scale(1.02)' : 'none',
-                transition: 'all 0.2s',
-                position: 'relative'
-              }}
-            >
-              {/* Delete button — only on sub-books, not Main Book */}
-              {b.ID !== 'book_main' && (
-                <button
-                  onClick={(e) => openDeleteModal(e, b)}
-                  title={`Delete "${b.Name}"`}
-                  style={{
-                    position: 'absolute', top: '8px', right: '8px',
-                    background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
-                    borderRadius: '6px', padding: '4px 6px', cursor: 'pointer',
-                    color: 'var(--danger)', display: 'flex', alignItems: 'center'
-                  }}
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
-              <h4 style={{ margin: '0 0 8px 0', color: activeBookId === b.ID ? 'var(--primary)' : 'inherit', paddingRight: b.ID !== 'book_main' ? '28px' : '0' }}>{b.Name}</h4>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{b.Description}</p>
-            </div>
-          ))}
+        {/* Cashbooks Strips — horizontal strip padding layout */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {books.map(b => {
+            const isSelected = activeBookId === b.ID;
+            return (
+              <div 
+                key={b.ID} 
+                onClick={() => setActiveBookId(b.ID)}
+                className="card glass" 
+                style={{ 
+                  cursor: 'pointer', 
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                  background: isSelected ? 'rgba(59, 130, 246, 0.08)' : 'var(--surface-color)',
+                  borderRadius: '12px',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+                  <span style={{ 
+                    width: '36px', height: '36px', borderRadius: '8px', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                    background: isSelected ? 'var(--primary)' : 'rgba(150, 150, 150, 0.12)', 
+                    color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+                    flexShrink: 0
+                  }}>
+                    <BookOpen size={17} />
+                  </span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ 
+                      fontSize: '0.95rem', 
+                      fontWeight: '600', 
+                      color: isSelected ? 'var(--primary)' : 'var(--text-primary)',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                    }}>
+                      {b.Name} {isSelected && <span style={{ fontSize: '0.7rem', background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '10px', marginLeft: '6px', fontWeight: '700' }}>Active</span>}
+                    </div>
+                    {b.Description && (
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {b.Description}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '12px' }}>
+                  {/* Delete button — only on sub-books, not Main Book */}
+                  {b.ID !== 'book_main' && (
+                    <button
+                      onClick={(e) => openDeleteModal(e, b)}
+                      title={`Delete "${b.Name}"`}
+                      style={{
+                        background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                        borderRadius: '6px', padding: '6px 8px', cursor: 'pointer',
+                        color: 'var(--danger)', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
           {books.length === 0 && <p className="text-secondary">No books assigned to you.</p>}
           <div 
             onClick={() => setShowCreateBook(true)}
             className="card glass" 
             style={{ 
               cursor: 'pointer', 
-              display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+              padding: '10px 16px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               border: '2px dashed var(--border-color)',
-              minHeight: '80px',
-              color: 'var(--text-secondary)'
+              borderRadius: '12px',
+              color: 'var(--primary)',
+              fontWeight: '600',
+              fontSize: '0.88rem',
+              transition: 'all 0.2s',
+              background: 'transparent',
+              minHeight: '46px'
             }}
           >
-            <Plus size={24} style={{ marginBottom: '4px' }} />
-            <div style={{ fontSize: '0.85rem' }}>Create Book</div>
+            <Plus size={18} /> Create New Cashbook
           </div>
         </div>
       </div>
 
-      {/* Removed Advanced Analytics card */}
-      
       {/* Staff Summary Card */}
       <div className="card glass" style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showStaffSummary ? '16px' : '0' }}>
-          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Users size={18} /> Staff Summary
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showStaffSummary ? '14px' : '0' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
+            <Users size={18} className="text-primary" /> Staff Summary
           </h3>
-          <button className="btn btn-outline" style={{ padding: '6px 14px', fontSize: '0.8rem' }} onClick={() => setShowStaffSummary(!showStaffSummary)}>
+          <button className="btn btn-outline" style={{ padding: '5px 12px', fontSize: '0.78rem' }} onClick={() => setShowStaffSummary(!showStaffSummary)}>
             {showStaffSummary ? 'Hide' : 'View All'}
           </button>
         </div>
@@ -472,13 +537,15 @@ export default function BossHome({ user, setAuthUser }) {
 
       {/* Recent Entries */}
       <div className="card glass" style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showRecentEntries ? '16px' : '0' }}>
-          <h3 style={{ margin: 0 }}>📋 Recent Entries</h3>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button className="btn btn-outline" style={{ padding: '6px 14px', fontSize: '0.8rem' }} onClick={() => setShowRecentEntries(!showRecentEntries)}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: showRecentEntries ? '14px' : '0' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
+            📋 Recent Entries
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
+            <button className="btn btn-outline" style={{ padding: '4px 12px', fontSize: '0.78rem', minWidth: '78px', textAlign: 'center' }} onClick={() => setShowRecentEntries(!showRecentEntries)}>
               {showRecentEntries ? 'Hide' : 'View All'}
             </button>
-            <Link to="/entries" style={{ fontSize: '0.82rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: '600', marginLeft: '4px' }}>Full List →</Link>
+            <Link to="/entries" style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: '700', letterSpacing: '0.2px' }}>Full List →</Link>
           </div>
         </div>
         {showRecentEntries && (
