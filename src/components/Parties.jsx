@@ -280,10 +280,13 @@ export default function Parties({ user }) {
       {showModal && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex',
-          justifyContent: 'center', alignItems: 'center', padding: '16px'
+          background: 'rgba(0,0,0,0.55)', zIndex: 1000,
+          display: 'flex', justifyContent: 'center',
+          alignItems: 'flex-start',        // anchor to top so content is scrollable
+          overflowY: 'auto',               // overlay itself scrolls if needed
+          padding: '12px 12px 80px 12px'   // 80px bottom = nav bar clearance
         }}>
-          <div className="card glass animate-fade-in" style={{ width: '100%', maxWidth: '420px', padding: '24px', borderRadius: '16px', maxHeight: '92vh', overflowY: 'auto' }}>
+          <div className="card glass animate-fade-in" style={{ width: '100%', maxWidth: '420px', padding: '20px', borderRadius: '16px', flexShrink: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0 }}>Set Pending Balance</h3>
               <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px' }}>

@@ -324,52 +324,55 @@ export default function BossHome({ user, setAuthUser }) {
 
   return (
     <div className="container animate-fade-in pb-20" style={{ padding: '16px' }}>
-      {/* ── Brand header ── */}
-      <div style={{ textAlign: 'center', margin: '12px 0 12px 0' }}>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: '700', color: 'var(--primary)', letterSpacing: '-0.5px', margin: '0 0 2px 0' }}>{settings.BrandName || 'ToCashBook'}</h1>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, fontWeight: '500' }}>{settings.Tagline || 'Developed by Thosho Tech'}</p>
-      </div>
-
-      {/* ── Single compact strip: Share | Welcome | Add | Sync ── */}
-      <div className="header glass" style={{ padding: '8px 14px', borderRadius: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-        {/* Left — Share */}
-        <button onClick={handleShareDailySummary} className="btn btn-outline" style={{ padding: '7px 10px', flexShrink: 0 }} title="Share Daily Summary">
-          <Share2 size={16} />
+      {/* ── Brand row: [Sync] · Pasha · Personal CashBook · [Share] ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0 2px 0' }}>
+        {/* Left — Sync */}
+        <button onClick={handleSync} className="btn btn-outline" style={{ padding: '7px 10px', flexShrink: 0 }} disabled={syncing}>
+          <RefreshCw size={17} className={syncing ? 'animate-spin' : ''} />
         </button>
 
-        {/* Center — Welcome text */}
-        <span style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-primary)', textAlign: 'center', flex: 1 }}>
-          Welcome, {user?.Name || user?.Username || user?.Phone}
-        </span>
-
-        {/* Right — Add Entry (desktop only) + Sync */}
-        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-          <Link to="/entry" className="btn btn-primary desktop-only" style={{ padding: '6px 12px', textDecoration: 'none', fontSize: '0.82rem' }}>
-            <PlusCircle size={15} /> {t('dashboard.add_transaction')}
-          </Link>
-          <button onClick={handleSync} className="btn btn-outline" style={{ padding: '7px 10px' }} disabled={syncing}>
-            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
-          </button>
+        {/* Center — Brand */}
+        <div style={{ textAlign: 'center', flex: 1 }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary)', letterSpacing: '-0.5px', margin: 0, lineHeight: 1.2 }}>
+            {settings.BrandName || 'ToCashBook'}
+          </h1>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0, fontWeight: '500' }}>
+            {settings.Tagline || 'Developed by Thosho Tech'}
+          </p>
         </div>
+
+        {/* Right — Share */}
+        <button onClick={handleShareDailySummary} className="btn btn-outline" style={{ padding: '7px 10px', flexShrink: 0 }} title="Share Daily Summary">
+          <Share2 size={17} />
+        </button>
       </div>
 
-      {/* ── Balance Cards — always visible ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '20px' }}>
-        <div className="card glass" style={{ borderBottom: '4px solid var(--primary)', padding: '14px' }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>{t('dashboard.net_balance')}</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 'bold', color: 'var(--primary)', lineHeight: 1.2 }}>₹{balance.toFixed(2)}</div>
+      {/* Welcome below tagline */}
+      <div style={{ textAlign: 'center', padding: '4px 0 12px 0', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>
+        Welcome, {user?.Name || user?.Username || user?.Phone}
+        {/* Desktop-only add entry link */}
+        <Link to="/entry" className="btn btn-primary desktop-only" style={{ padding: '5px 12px', textDecoration: 'none', fontSize: '0.8rem', marginLeft: '12px', verticalAlign: 'middle' }}>
+          <PlusCircle size={14} /> {t('dashboard.add_transaction')}
+        </Link>
+      </div>
+
+      {/* ── Balance Cards — always visible, responsive font ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px' }}>
+        <div className="card glass" style={{ borderBottom: '4px solid var(--primary)', padding: '10px 8px', minWidth: 0 }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('dashboard.net_balance')}</div>
+          <div style={{ fontSize: 'clamp(0.85rem, 3.5vw, 1.4rem)', fontWeight: 'bold', color: 'var(--primary)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{balance.toFixed(0)}</div>
         </div>
-        <div className="card glass" style={{ borderBottom: '4px solid var(--success)', padding: '14px' }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <ArrowUpRight size={14} className="text-success" /> {t('dashboard.cash_in')}
+        <div className="card glass" style={{ borderBottom: '4px solid var(--success)', padding: '10px 8px', minWidth: 0 }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap' }}>
+            <ArrowUpRight size={12} className="text-success" /> {t('dashboard.cash_in')}
           </div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: 'var(--success)', lineHeight: 1.2 }}>₹{totalIncome.toFixed(2)}</div>
+          <div style={{ fontSize: 'clamp(0.85rem, 3.5vw, 1.4rem)', fontWeight: 'bold', color: 'var(--success)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{totalIncome.toFixed(0)}</div>
         </div>
-        <div className="card glass" style={{ borderBottom: '4px solid var(--danger)', padding: '14px' }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <ArrowDownRight size={14} className="text-danger" /> {t('dashboard.cash_out')}
+        <div className="card glass" style={{ borderBottom: '4px solid var(--danger)', padding: '10px 8px', minWidth: 0 }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap' }}>
+            <ArrowDownRight size={12} className="text-danger" /> {t('dashboard.cash_out')}
           </div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: 'var(--danger)', lineHeight: 1.2 }}>₹{totalExpense.toFixed(2)}</div>
+          <div style={{ fontSize: 'clamp(0.85rem, 3.5vw, 1.4rem)', fontWeight: 'bold', color: 'var(--danger)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{totalExpense.toFixed(0)}</div>
         </div>
       </div>
 
@@ -378,19 +381,8 @@ export default function BossHome({ user, setAuthUser }) {
           <BookOpen size={20} /> Your Cashbooks
         </h3>
 
-        {/* View Cashbooks Toggle (Mobile/Tablet Only) */}
-        <div className="mobile-only" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-          <button 
-            onClick={() => setShowBooks(!showBooks)} 
-            className={`btn ${showBooks ? 'btn-outline' : 'btn-primary'}`} 
-            style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.875rem' }}
-          >
-            {showBooks ? <><EyeOff size={16} /> Hide Cashbooks</> : <><Eye size={16} /> View Cashbooks</>}
-          </button>
-        </div>
-
-        {/* Cashbooks Grid - Hidden on mobile unless showBooks is true. Always shown on desktop */}
-        <div className={`animate-fade-in ${showBooks ? '' : 'desktop-only'}`} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+        {/* Cashbooks Grid — always visible */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '12px' }}>
           {books.map(b => (
             <div 
               key={b.ID} 
@@ -513,10 +505,12 @@ export default function BossHome({ user, setAuthUser }) {
       {showCreateBook && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-          background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', 
-          justifyContent: 'center', alignItems: 'center', padding: '20px'
+          background: 'rgba(0,0,0,0.5)', zIndex: 100,
+          display: 'flex', justifyContent: 'center',
+          alignItems: 'flex-start', overflowY: 'auto',
+          padding: '12px 12px 80px 12px'
         }}>
-          <div className="card glass animate-fade-in" style={{ width: '100%', maxWidth: '400px', position: 'relative' }}>
+          <div className="card glass animate-fade-in" style={{ width: '100%', maxWidth: '400px', position: 'relative', flexShrink: 0 }}>
             <button 
               onClick={() => setShowCreateBook(false)}
               style={{ position: 'absolute', top: '16px', right: '16px', background: 'var(--bg-color)', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', padding: '4px', borderRadius: '50%' }}
@@ -618,8 +612,10 @@ export default function BossHome({ user, setAuthUser }) {
         return (
           <div style={{
             position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-            background: 'rgba(0,0,0,0.65)', zIndex: 2000, display: 'flex',
-            justifyContent: 'center', alignItems: 'center', padding: '16px'
+            background: 'rgba(0,0,0,0.65)', zIndex: 2000,
+            display: 'flex', justifyContent: 'center',
+            alignItems: 'flex-start', overflowY: 'auto',
+            padding: '12px 12px 80px 12px'
           }}>
             <div className="card glass animate-fade-in" style={{
               width: '100%', maxWidth: '420px', padding: '24px',

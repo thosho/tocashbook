@@ -609,7 +609,8 @@ export default function StaffEntry({ user, setAuthUser }) {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: books.length > 1 ? '1fr 1fr 1fr' : '1fr 1fr', gap: '16px' }}>
+          {/* Category + Payment Mode — always 2 columns, fits mobile */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div className="input-group">
               <label>Category</label>
               <select value={category} onChange={(e) => setCategory(e.target.value)} required>
@@ -633,29 +634,29 @@ export default function StaffEntry({ user, setAuthUser }) {
                 <option value="Bank Transfer">Bank Transfer</option>
               </select>
             </div>
-
-            {/* Book selector inside form — only shown when staff has multiple books */}
-            {books.length > 1 && (
-              <div className="input-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <BookOpen size={13} /> Cashbook
-                </label>
-                <select
-                  value={resolvedBookIdRef.current || activeBookId}
-                  onChange={(e) => {
-                    const newId = e.target.value;
-                    resolvedBookIdRef.current = newId;
-                    setActiveBookId(newId);
-                    setTimeout(() => loadData(), 0);
-                  }}
-                >
-                  {books.map(b => (
-                    <option key={b.ID} value={b.ID}>{b.Name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
+
+          {/* Cashbook selector — full width on its own row, only when multiple books */}
+          {books.length > 1 && (
+            <div className="input-group" style={{ marginTop: '4px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <BookOpen size={13} /> Cashbook
+              </label>
+              <select
+                value={resolvedBookIdRef.current || activeBookId}
+                onChange={(e) => {
+                  const newId = e.target.value;
+                  resolvedBookIdRef.current = newId;
+                  setActiveBookId(newId);
+                  setTimeout(() => loadData(), 0);
+                }}
+              >
+                {books.map(b => (
+                  <option key={b.ID} value={b.ID}>{b.Name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {category === 'CREATE_NEW' && (
             <div className="input-group animate-fade-in" style={{ padding: '12px', background: 'var(--bg-color)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
