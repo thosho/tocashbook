@@ -109,17 +109,28 @@ export default function Entries() {
     return result;
   }, [transactions, searchQuery, filterType, filterMode, activeBookId, showRecentOnly]);
 
-  // BUG-H4 FIX: Compute running balance starting from Opening Balance
+  // BUG-E2 FIX: Running balance computed from ALL book entries (not just filtered subset)
+  // so the "Bal:" figure is always the true account balance at that point in time,
+  // regardless of what search/type/mode filter is currently active.
   const runningBalance = useMemo(() => {
-    const chronological = [...filteredTx].reverse();
+    // Full book set — same book filter, no search/type/mode filter, chronological order
+    const allBookTx = [...transactions]
+      .filter(t => {
+        if (!activeBookId || activeBookId === 'book_main') {
+          return !t.bossNotes?.startsWith('Auto-reflected');
+        }
+        return t.bookId === activeBookId;
+      })
+      .sort((a, b) => new Date(a.date) - new Date(b.date)); // oldest first
+
     let balance = parseFloat(settings.OpeningBalance) || 0;
     const balMap = {};
-    chronological.forEach(t => {
+    allBookTx.forEach(t => {
       balance += t.type === 'Income' ? (t.amount || 0) : -(t.amount || 0);
       balMap[t.id] = balance;
     });
     return balMap;
-  }, [filteredTx, settings]);
+  }, [transactions, activeBookId, settings]);
 
   const totalIn = filteredTx.filter(t => t.type === 'Income').reduce((a, b) => a + (b.amount || 0), 0);
   const totalOut = filteredTx.filter(t => t.type === 'Expense').reduce((a, b) => a + (b.amount || 0), 0);

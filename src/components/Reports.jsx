@@ -58,9 +58,9 @@ export default function Reports() {
     autoSync();
   }, []);
 
-  useEffect(() => {
-    if (activeBookId) setBookFilter(activeBookId);
-  }, [activeBookId]);
+  // NOTE: bookFilter intentionally NOT synced from activeBookId.
+  // Reports always starts with 'All Cashbooks' so boss sees complete data.
+  // Boss can manually filter by cashbook using the dropdown if needed.
 
   const loadData = async () => {
     const allTrans = await getTransactions();
