@@ -54,14 +54,14 @@ export default function Entries() {
 
   const getStaffName = (username) => {
     if (!username) return '—';
-    if (username.toLowerCase() === 'boss') return '👑 Boss';
-    // BUG-C3 FIX: Use Name field first, fall back to Username or the raw value
+    const uname = String(username).trim();
+    if (uname.toLowerCase() === 'boss') return '👑 Boss';
     const user = users.find(u =>
-      u.Name?.toLowerCase() === username.toLowerCase() ||
-      u.Username?.toLowerCase() === username.toLowerCase() ||
-      u.Phone?.toLowerCase() === username.toLowerCase()
+      String(u.Name || '').toLowerCase() === uname.toLowerCase() ||
+      String(u.Username || '').toLowerCase() === uname.toLowerCase() ||
+      String(u.Phone || '').toLowerCase() === uname.toLowerCase()
     );
-    return user ? (user.Name || user.Username || username) : username;
+    return user ? String(user.Name || user.Username || uname) : uname;
   };
 
   const handleRefresh = async () => {
@@ -81,18 +81,18 @@ export default function Entries() {
   // ACCOUNTING: Main Book = General Ledger = all transactions, skip auto-reflected copies.
   // Individual books show only their own entries.
   const filteredTx = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
+    const q = String(searchQuery || '').toLowerCase().trim();
     let result = [...transactions]
       .filter(t => {
         if (!activeBookId || activeBookId === 'book_main') {
-          return !t.bossNotes?.startsWith('Auto-reflected'); // General ledger, no duplicates
+          return !String(t.bossNotes || '').startsWith('Auto-reflected');
         }
         return t.bookId === activeBookId;
       })
       .sort((a, b) => {
-        const diff = new Date(b.date) - new Date(a.date);
-        if (diff !== 0) return diff;
-        return String(b.id).localeCompare(String(a.id));
+        const diff = new Date(b.date || 0) - new Date(a.date || 0);
+        if (!isNaN(diff) && diff !== 0) return diff;
+        return String(b.id || '').localeCompare(String(a.id || ''));
       })
       .filter(t => {
         const typeMatch = filterType === 'all' || t.type === filterType;
@@ -100,52 +100,48 @@ export default function Entries() {
         if (!typeMatch || !modeMatch) return false;
         if (!q) return true;
         return (
-          t.partyName?.toLowerCase().includes(q) ||
-          t.category?.toLowerCase().includes(q) ||
-          t.remarks?.toLowerCase().includes(q) ||
-          t.reference?.toLowerCase().includes(q) ||
-          String(t.amount).includes(q) ||
-          t.date?.includes(q) ||
-          t.user?.toLowerCase().includes(q)
+          String(t.partyName || '').toLowerCase().includes(q) ||
+          String(t.category || '').toLowerCase().includes(q) ||
+          String(t.remarks || '').toLowerCase().includes(q) ||
+          String(t.reference || '').toLowerCase().includes(q) ||
+          String(t.amount || '').includes(q) ||
+          String(t.date || '').includes(q) ||
+          String(t.user || '').toLowerCase().includes(q)
         );
       });
       
     if (showRecentOnly) {
-      result = result.slice(0, 15); // Show last 15 entries
+      result = result.slice(0, 15);
     }
     return result;
   }, [transactions, searchQuery, filterType, filterMode, activeBookId, showRecentOnly]);
 
-  // BUG-E2 FIX: Running balance computed from ALL book entries (not just filtered subset)
-  // so the "Bal:" figure is always the true account balance at that point in time,
-  // regardless of what search/type/mode filter is currently active.
   const runningBalance = useMemo(() => {
-    // Full book set — same book filter, no search/type/mode filter, chronological order
     const allBookTx = [...transactions]
       .filter(t => {
         if (!activeBookId || activeBookId === 'book_main') {
-          return !t.bossNotes?.startsWith('Auto-reflected');
+          return !String(t.bossNotes || '').startsWith('Auto-reflected');
         }
         return t.bookId === activeBookId;
       })
       .sort((a, b) => {
-        const diff = new Date(a.date) - new Date(b.date);
-        if (diff !== 0) return diff;
-        return String(a.id).localeCompare(String(b.id));
+        const diff = new Date(a.date || 0) - new Date(b.date || 0);
+        if (!isNaN(diff) && diff !== 0) return diff;
+        return String(a.id || '').localeCompare(String(b.id || ''));
       });
 
-    // G1 FIX: only add global opening balance if Main Book is selected
-    let balance = (!activeBookId || activeBookId === 'book_main') ? (parseFloat(settings.OpeningBalance) || 0) : 0;
+    let balance = (!activeBookId || activeBookId === 'book_main') ? (parseFloat(settings?.OpeningBalance) || 0) : 0;
     const balMap = {};
     allBookTx.forEach(t => {
-      balance += t.type === 'Income' ? (t.amount || 0) : -(t.amount || 0);
+      const amt = parseFloat(t.amount) || 0;
+      balance += t.type === 'Income' ? amt : -amt;
       balMap[t.id] = balance;
     });
     return balMap;
   }, [transactions, activeBookId, settings]);
 
-  const totalIn = filteredTx.filter(t => t.type === 'Income').reduce((a, b) => a + (b.amount || 0), 0);
-  const totalOut = filteredTx.filter(t => t.type === 'Expense').reduce((a, b) => a + (b.amount || 0), 0);
+  const totalIn = filteredTx.filter(t => t.type === 'Income').reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
+  const totalOut = filteredTx.filter(t => t.type === 'Expense').reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
 
   const handleShareReceipt = async (t, downloadOnly = false) => {
     try {
@@ -359,11 +355,11 @@ export default function Entries() {
           </div>
           <div className="card glass" style={{ padding: '12px', textAlign: 'center' }}>
             <div style={{ fontSize: '0.65rem', color: 'var(--success)', marginBottom: '4px' }}>CASH IN</div>
-            <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--success)' }}>₹{totalIn.toLocaleString()}</div>
+            <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--success)' }}>₹{(parseFloat(totalIn) || 0).toLocaleString()}</div>
           </div>
           <div className="card glass" style={{ padding: '12px', textAlign: 'center' }}>
             <div style={{ fontSize: '0.65rem', color: 'var(--danger)', marginBottom: '4px' }}>CASH OUT</div>
-            <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--danger)' }}>₹{totalOut.toLocaleString()}</div>
+            <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--danger)' }}>₹{(parseFloat(totalOut) || 0).toLocaleString()}</div>
           </div>
         </div>
       )}
@@ -385,7 +381,7 @@ export default function Entries() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
-                      {t.partyName || t.category}
+                      {String(t.partyName || t.category || '—')}
                     </span>
                     <span className={`badge ${t.type === 'Income' ? 'badge-income' : 'badge-expense'}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
                       {t.type === 'Income' ? 'IN' : 'OUT'}
@@ -397,22 +393,22 @@ export default function Entries() {
                     )}
                   </div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '3px' }}>
-                    {t.date} · {t.paymentMode || 'Cash'} · {getStaffName(t.user)}
-                    {t.remarks && <span> · {t.remarks.slice(0, 30)}{t.remarks.length > 30 ? '…' : ''}</span>}
+                    {String(t.date || '—')} · {String(t.paymentMode || 'Cash')} · {getStaffName(t.user)}
+                    {t.remarks && <span> · {String(t.remarks).slice(0, 30)}{String(t.remarks).length > 30 ? '…' : ''}</span>}
                   </div>
                   {t.bossNotes && (
                     <div style={{ fontSize: '0.7rem', color: 'var(--primary)', marginTop: '2px', fontStyle: 'italic' }}>
-                      📝 {t.bossNotes}
+                      📝 {String(t.bossNotes)}
                     </div>
                   )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '12px' }}>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontWeight: '700', color: t.type === 'Income' ? 'var(--success)' : 'var(--danger)', fontSize: '0.95rem' }}>
-                      {t.type === 'Income' ? '+' : '-'}₹{(t.amount || 0).toLocaleString()}
+                      {t.type === 'Income' ? '+' : '-'}₹{(parseFloat(t.amount) || 0).toLocaleString()}
                     </div>
                     <div style={{ fontSize: '0.65rem', color: (runningBalance[t.id] || 0) >= 0 ? 'var(--text-secondary)' : 'var(--danger)', marginTop: '2px' }}>
-                      Bal: ₹{(runningBalance[t.id] || 0).toLocaleString()}
+                      Bal: ₹{(parseFloat(runningBalance[t.id]) || 0).toLocaleString()}
                     </div>
                   </div>
                   <button onClick={() => navigate('/entry', { state: { editTransaction: t } })}
