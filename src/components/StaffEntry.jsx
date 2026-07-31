@@ -105,7 +105,7 @@ export default function StaffEntry({ user, setAuthUser }) {
     // BUG FIX #11: Case-insensitive filter for staff's own transactions
     setTransactions(
       trans
-        .filter(t => t.user?.toLowerCase() === user.Username?.toLowerCase() && t.bookId === currentBookId)
+        .filter(t => t.user?.toLowerCase() === (user.Name || user.Username || user.Phone)?.toLowerCase() && t.bookId === currentBookId)
         .sort((a, b) => new Date(b.date) - new Date(a.date))
         .slice(0, 10)
     );
@@ -185,7 +185,7 @@ export default function StaffEntry({ user, setAuthUser }) {
     if (editTransaction) {
       const editMetadata = {
         dateEdited: new Date().toISOString(),
-        editedBy: user.Username,
+        editedBy: user.Name || user.Username || user.Phone,
         oldAmount: editTransaction.amount,
         newAmount: parseFloat(amount)
       };
@@ -240,7 +240,7 @@ export default function StaffEntry({ user, setAuthUser }) {
         remarks,
         bossNotes: user.Role === 'Admin' ? bossNotes : '',
         recurring,
-        user: user.Username,
+        user: user.Name || user.Username || user.Phone,
         imageFile: image,
         imageFilename: imageFilename,
         synced: false,
@@ -274,12 +274,12 @@ export default function StaffEntry({ user, setAuthUser }) {
     setDeleting(true);
     try {
       if (navigator.onLine) {
-        await deleteTransactionAPI(editTransaction.id, user.Username, reason);
+        await deleteTransactionAPI(editTransaction.id, user.Name || user.Username || user.Phone, reason);
         await deleteTransaction(editTransaction.id);
       } else {
         // H6 FIX: Queue delete for when connection is restored
         await deleteTransaction(editTransaction.id); // remove locally
-        await addPendingDelete(editTransaction.id, user.Username, reason);
+        await addPendingDelete(editTransaction.id, user.Name || user.Username || user.Phone, reason);
         alert('Deleted locally. Will sync to server when internet is restored.');
         navigate(user.Role === 'Admin' ? '/entries' : '/staff-entry');
         setDeleting(false);
@@ -473,7 +473,7 @@ export default function StaffEntry({ user, setAuthUser }) {
     <div className="container animate-fade-in pb-20">
       <div className="header glass" style={{ padding: '16px 20px', borderRadius: '16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <h2 style={{ fontSize: '1.25rem', margin: 0 }}>
-          {editTransaction ? 'Edit Transaction' : `Hello, ${user?.Username}`}
+          {editTransaction ? 'Edit Transaction' : `Hello, ${user?.Name || user?.Username || user?.Phone}`}
         </h2>
 
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>

@@ -224,7 +224,7 @@ export default function BossHome({ user, setAuthUser }) {
       </div>
 
       <div className="header glass" style={{ padding: '10px 16px', borderRadius: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)' }}>Welcome, {user?.Username}</span>
+        <span style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--text-primary)' }}>Welcome, {user?.Name || user?.Username || user?.Phone}</span>
         
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <Link to="/entry" className="btn btn-primary desktop-only" style={{ padding: '6px 12px', textDecoration: 'none', fontSize: '0.85rem' }}>
