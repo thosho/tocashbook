@@ -100,7 +100,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
           if ((await Share.canShare()).value) {
             await Share.share({
               title: settings.BrandName || 'Business Card',
-              text: `Here is our business card for ${settings.BrandName || 'ToCashbook'}!`,
+              text: `Here is our business card for ${settings.BrandName || 'Open Cashbook'}!`,
               url: savedFile.uri
             });
           }

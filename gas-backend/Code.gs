@@ -293,8 +293,8 @@ function getSheetDataAsJson(sheet) {
 function saveImageToDrive(base64Data, filename) {
   try {
     let folder;
-    const folders = DriveApp.getFoldersByName('ToCashbook_Receipts');
-    folder = folders.hasNext() ? folders.next() : DriveApp.createFolder('ToCashbook_Receipts');
+    const folders = DriveApp.getFoldersByName('OpenCashbook_Receipts');
+    folder = folders.hasNext() ? folders.next() : DriveApp.createFolder('OpenCashbook_Receipts');
     const contentType = base64Data.substring(5, base64Data.indexOf(';'));
     const base64Str = base64Data.substring(base64Data.indexOf(',') + 1);
     const blob = Utilities.newBlob(Utilities.base64Decode(base64Str), contentType, filename);

@@ -1,4 +1,4 @@
-package com.thosho.tocashbook;
+package com.thosho.opencashbook;
 
 import com.getcapacitor.BridgeActivity;
 

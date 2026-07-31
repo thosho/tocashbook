@@ -30,11 +30,11 @@ export default class ErrorBoundary extends React.Component {
     console.error("ErrorBoundary caught an error:", errObj);
 
     try {
-      const existingLogs = JSON.parse(localStorage.getItem('tocashbook_error_logs') || '[]');
+      const existingLogs = JSON.parse(localStorage.getItem('opencashbook_error_logs') || '[]');
       existingLogs.unshift(errObj);
       // keep latest 20 logs
       const trimmedLogs = existingLogs.slice(0, 20);
-      localStorage.setItem('tocashbook_error_logs', JSON.stringify(trimmedLogs));
+      localStorage.setItem('opencashbook_error_logs', JSON.stringify(trimmedLogs));
       this.setState({ logs: trimmedLogs });
     } catch (e) {
       console.error("Could not write error log to storage", e);
@@ -43,14 +43,14 @@ export default class ErrorBoundary extends React.Component {
 
   componentDidMount() {
     try {
-      const existingLogs = JSON.parse(localStorage.getItem('tocashbook_error_logs') || '[]');
+      const existingLogs = JSON.parse(localStorage.getItem('opencashbook_error_logs') || '[]');
       this.setState({ logs: existingLogs });
     } catch (_) {}
   }
 
   handleCopyLog = () => {
     const { error, errorInfo } = this.state;
-    const text = `🚨 ToCashBook Crash Log\nTime: ${new Date().toLocaleString()}\nError: ${error ? error.toString() : ''}\n\nStack:\n${error && error.stack ? error.stack : ''}\n\nComponent Stack:\n${errorInfo && errorInfo.componentStack ? errorInfo.componentStack : ''}`;
+    const text = `🚨 Open Cashbook Crash Log\nTime: ${new Date().toLocaleString()}\nError: ${error ? error.toString() : ''}\n\nStack:\n${error && error.stack ? error.stack : ''}\n\nComponent Stack:\n${errorInfo && errorInfo.componentStack ? errorInfo.componentStack : ''}`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).then(() => {
         alert("✅ Error log copied to clipboard! Please paste this in our discussion or support.");
@@ -61,7 +61,7 @@ export default class ErrorBoundary extends React.Component {
   };
 
   handleClearLogs = () => {
-    localStorage.removeItem('tocashbook_error_logs');
+    localStorage.removeItem('opencashbook_error_logs');
     this.setState({ logs: [], showLogs: false });
     alert("Error logs cleared.");
   };
@@ -209,7 +209,7 @@ export default class ErrorBoundary extends React.Component {
                 <button
                   type="button"
                   onClick={() => {
-                    const errText = `⚠️ ToCashBook Bug Log for @thosho:\nTime: ${new Date().toLocaleString()}\nError: ${error ? error.toString() : 'Unknown Exception'}\n\nTrace:\n${error?.stack || errorInfo?.componentStack || 'N/A'}`;
+                    const errText = `⚠️ Open Cashbook Bug Log for @thosho:\nTime: ${new Date().toLocaleString()}\nError: ${error ? error.toString() : 'Unknown Exception'}\n\nTrace:\n${error?.stack || errorInfo?.componentStack || 'N/A'}`;
                     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(errText)}`, '_blank');
                   }}
                   style={{
@@ -229,8 +229,8 @@ export default class ErrorBoundary extends React.Component {
                 <button
                   type="button"
                   onClick={() => {
-                    const errText = `Hello Thosho Tech Support,\n\nI experienced an issue in ToCashBook. Here is my bug report log:\n\nTime: ${new Date().toLocaleString()}\nError: ${error ? error.toString() : 'Unknown Exception'}\n\nTrace:\n${error?.stack || errorInfo?.componentStack || 'N/A'}`;
-                    window.open(`mailto:contact@thoshotech.com?subject=${encodeURIComponent('ToCashBook Crash Report')}&body=${encodeURIComponent(errText)}`, '_blank');
+                    const errText = `Hello Thosho Tech Support,\n\nI experienced an issue in Open Cashbook. Here is my bug report log:\n\nTime: ${new Date().toLocaleString()}\nError: ${error ? error.toString() : 'Unknown Exception'}\n\nTrace:\n${error?.stack || errorInfo?.componentStack || 'N/A'}`;
+                    window.open(`mailto:contact@thoshotech.com?subject=${encodeURIComponent('Open Cashbook Crash Report')}&body=${encodeURIComponent(errText)}`, '_blank');
                   }}
                   style={{
                     padding: '8px 6px',

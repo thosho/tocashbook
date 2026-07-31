@@ -4,7 +4,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 
 localforage.config({
-  name: 'ToCashbook',
+  name: 'OpenCashbook',
   storeName: 'ledgerData'
 });
 
@@ -218,7 +218,7 @@ export const exportDatabase = async () => {
   };
   const jsonString = JSON.stringify(data);
   const dateStr = new Date().toISOString().split('T')[0];
-  const fileName = `tocashbook_backup_${dateStr}.json`;
+  const fileName = `opencashbook_backup_${dateStr}.json`;
 
   if (Capacitor.isNativePlatform()) {
     try {
@@ -230,8 +230,8 @@ export const exportDatabase = async () => {
       });
       if ((await Share.canShare()).value) {
         await Share.share({
-          title: 'ToCashBook Backup',
-          text: 'Here is your ToCashBook backup file.',
+          title: 'Open Cashbook Backup',
+          text: 'Here is your Open Cashbook backup file.',
           url: savedFile.uri
         });
       }

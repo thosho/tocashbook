@@ -1,12 +1,12 @@
 {
-  "name": "tocashbook",
+  "name": "opencashbook",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "main": "electron/main.js",
   "build": {
-    "appId": "com.thosho.tocashbook",
-    "productName": "ToCashBook",
+    "appId": "com.thosho.opencashbook",
+    "productName": "Open Cashbook",
     "directories": {
       "output": "dist-electron"
     },
