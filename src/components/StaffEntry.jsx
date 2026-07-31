@@ -599,7 +599,7 @@ export default function StaffEntry({ user, setAuthUser }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <label style={{ marginBottom: 0 }}>Party / Contact Name (Optional)</label>
               {('contacts' in navigator) && (
-                <button type="button" onClick={handleContactPicker} className="text-primary" style={{ background: 'none', border: 'none', fontSize: '0.875rem', cursor: 'pointer' }}>
+                <button type="button" onClick={handleContactPicker} style={{ background: 'none', border: 'none', fontSize: '0.875rem', cursor: 'pointer', color: '#3b82f6', fontWeight: '600' }}>
                   📞 Pick Contact
                 </button>
               )}
@@ -628,8 +628,8 @@ export default function StaffEntry({ user, setAuthUser }) {
             />
           </div>
 
-          {/* Category + Payment Mode — always 2 columns, fits mobile */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          {/* Category + Payment Mode — responsive stack on mobile to prevent cropping */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', width: '100%' }}>
             <div className="input-group">
               <label>Category</label>
               <select value={category} onChange={(e) => setCategory(e.target.value)} required>

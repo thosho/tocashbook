@@ -282,10 +282,9 @@ export default function Parties({ user }) {
             
             <form onSubmit={handleSubmitPending} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-              {/* Name */}
               <div className="input-group" style={{ margin: 0 }}>
                 <label>Customer / Party Name *</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', width: '100%', alignItems: 'center' }}>
                   <input 
                     type="text" 
                     value={pbName} 
@@ -297,9 +296,9 @@ export default function Parties({ user }) {
                     placeholder="Enter name" 
                     list="parties-datalist"
                     required 
-                    style={{ flex: 1 }}
+                    style={{ flex: '1 1 auto', minWidth: 0, padding: '10px 14px', minHeight: '44px', borderRadius: '8px', fontSize: '0.95rem' }}
                   />
-                  <button type="button" className="btn btn-outline" onClick={handlePickContact} title="Pick from Contacts" style={{ padding: '8px 12px' }}>
+                  <button type="button" className="btn btn-outline" onClick={handlePickContact} title="Pick from Contacts" style={{ flexShrink: 0, minHeight: '44px', minWidth: '48px', padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Contact size={20} />
                   </button>
                 </div>

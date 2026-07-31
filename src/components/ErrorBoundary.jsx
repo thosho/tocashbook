@@ -167,6 +167,88 @@ export default class ErrorBoundary extends React.Component {
               </button>
             </div>
 
+            {/* Support Share Section */}
+            <div style={{
+              marginTop: '8px',
+              padding: '14px',
+              backgroundColor: '#0f172a',
+              border: '1px solid #334155',
+              borderRadius: '12px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>💬 Report Bug to @Thosho Tech</span>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 'normal' }}>Fast support</span>
+              </div>
+              <p style={{ margin: 0, fontSize: '0.78rem', color: '#cbd5e1', lineHeight: '1.4' }}>
+                Tap below to send this crash log directly to our dev team via your favorite app:
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    this.handleCopyLog();
+                    window.open('https://t.me/thosho', '_blank');
+                  }}
+                  style={{
+                    padding: '8px 6px',
+                    borderRadius: '8px',
+                    border: '1px solid #0288d1',
+                    backgroundColor: '#039be5',
+                    color: 'white',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontSize: '0.78rem',
+                    textAlign: 'center'
+                  }}
+                >
+                  ✈️ Telegram<br/><span style={{ fontSize: '0.68rem', opacity: 0.9 }}>@thosho</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const errText = `⚠️ ToCashBook Bug Log for @thosho:\nTime: ${new Date().toLocaleString()}\nError: ${error ? error.toString() : 'Unknown Exception'}\n\nTrace:\n${error?.stack || errorInfo?.componentStack || 'N/A'}`;
+                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(errText)}`, '_blank');
+                  }}
+                  style={{
+                    padding: '8px 6px',
+                    borderRadius: '8px',
+                    border: '1px solid #15803d',
+                    backgroundColor: '#16a34a',
+                    color: 'white',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontSize: '0.78rem',
+                    textAlign: 'center'
+                  }}
+                >
+                  🟢 WhatsApp<br/><span style={{ fontSize: '0.68rem', opacity: 0.9 }}>@thosho</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const errText = `Hello Thosho Tech Support,\n\nI experienced an issue in ToCashBook. Here is my bug report log:\n\nTime: ${new Date().toLocaleString()}\nError: ${error ? error.toString() : 'Unknown Exception'}\n\nTrace:\n${error?.stack || errorInfo?.componentStack || 'N/A'}`;
+                    window.open(`mailto:contact@thoshotech.com?subject=${encodeURIComponent('ToCashBook Crash Report')}&body=${encodeURIComponent(errText)}`, '_blank');
+                  }}
+                  style={{
+                    padding: '8px 6px',
+                    borderRadius: '8px',
+                    border: '1px solid #475569',
+                    backgroundColor: '#334155',
+                    color: 'white',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontSize: '0.78rem',
+                    textAlign: 'center'
+                  }}
+                >
+                  ✉️ Email<br/><span style={{ fontSize: '0.65rem', opacity: 0.9 }}>Thoshotech</span>
+                </button>
+              </div>
+            </div>
+
             <button onClick={() => this.setState({ showLogs: !showLogs })} style={{
               padding: '10px',
               borderRadius: '10px',

@@ -288,14 +288,10 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0', fontWeight: '500' }}>Developed by Thosho Tech</p>
       </div>
 
-      <div className="header glass" style={{ padding: '16px 20px', borderRadius: '16px', marginBottom: '20px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ fontSize: '1.25rem', margin: 0 }}>{t('settings.title')}</h2>
-        <button 
-          onClick={() => { if(setAuthUser) setAuthUser(null); window.location.href = '/'; }} 
-          className="btn btn-outline text-danger" 
-          style={{ padding: '8px', borderColor: 'var(--danger-bg)' }}
-        >
-          <LogOut size={18} />
+      <div className="header glass" style={{ padding: '16px 20px', borderRadius: '16px', marginBottom: '20px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: '700' }}>{t('settings.title')}</h2>
+        <button className="btn btn-primary" onClick={handleSaveAll} disabled={saving} style={{ padding: '10px 18px', fontSize: '0.9rem', minHeight: '42px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {saving ? 'Syncing...' : 'Save & Sync Settings'} <Save size={18} />
         </button>
       </div>
 
@@ -309,19 +305,25 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
       {/* Appearance Settings */}
       <div className="card glass mb-4">
         <h3 style={{ marginBottom: '16px' }}>{t('settings.appearance')}</h3>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div 
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '4px 0', userSelect: 'none' }}
+          onClick={() => {
+            const nextMode = settings.DarkMode === 'dark' ? 'light' : 'dark';
+            handleDarkModeChange(nextMode);
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
             {settings.DarkMode === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
             <span style={{ fontWeight: '500' }}>Dark Mode</span>
           </div>
-          <label className="switch">
+          <div className="switch" style={{ pointerEvents: 'none' }}>
             <input 
               type="checkbox" 
               checked={settings.DarkMode === 'dark'}
-              onChange={(e) => handleDarkModeChange(e.target.checked ? 'dark' : 'light')}
+              readOnly
             />
             <span className="slider round"></span>
-          </label>
+          </div>
         </div>
       </div>
 
@@ -448,7 +450,8 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
               style={{ 
                 width: '100%', 
                 maxWidth: '400px', 
-                aspectRatio: '1.7 / 1', 
+                minHeight: '235px', 
+                height: 'auto',
                 background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', 
                 borderRadius: '16px', 
                 padding: '24px', 
@@ -489,7 +492,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
               </div>
               
               {/* Bottom Section: Details Grid */}
-              <div className="filter-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', zIndex: 1, marginTop: 'auto', columnGap: '16px' }}>
+              <div className="filter-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px', zIndex: 1, marginTop: '20px', columnGap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {settings.Phone && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#cbd5e1' }}>
@@ -584,13 +587,13 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
 
       <div className="card glass mb-4">
         <h3 style={{ marginBottom: '16px' }}>Manage Staff</h3>
-        <div className="settings-grid-staff">
-          <input type="text" placeholder="Name" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} className="input-group" style={{ marginBottom: 0, width: '100%' }} />
-          <input type="tel" placeholder="Phone Number" value={newUser.phone} onChange={e => setNewUser({...newUser, phone: e.target.value})} className="input-group" style={{ marginBottom: 0, width: '100%' }} />
-          <input type="text" placeholder="PIN" value={newUser.pin} onChange={e => setNewUser({...newUser, pin: e.target.value})} className="input-group" style={{ marginBottom: 0, width: '100%' }} />
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn-outline" onClick={handlePickContact} title="Pick from Contacts" style={{ flex: 1, padding: '8px' }}><Contact size={20} /></button>
-            <button className="btn btn-primary" onClick={handleAddUser} style={{ flex: 1, padding: '8px' }}><Plus size={20} /></button>
+        <div className="settings-grid-staff" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
+          <input type="text" placeholder="Staff Name" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)' }} />
+          <input type="tel" placeholder="Phone Number" value={newUser.phone} onChange={e => setNewUser({...newUser, phone: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)' }} />
+          <input type="text" placeholder="PIN Code" value={newUser.pin} onChange={e => setNewUser({...newUser, pin: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)' }} />
+          <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+            <button className="btn btn-outline" onClick={handlePickContact} title="Pick from Contacts" style={{ flex: '1 1 auto', minHeight: '44px', padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6', fontWeight: '600', gap: '6px' }}><Contact size={18} /> Contact</button>
+            <button className="btn btn-primary" onClick={handleAddUser} title="Add Staff" style={{ flex: '1 1 auto', minHeight: '44px', padding: '0 12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Plus size={18} /> Add</button>
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -609,13 +612,13 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
 
       <div className="card glass mb-4">
         <h3 style={{ marginBottom: '16px' }}>Manage Categories</h3>
-        <div className="settings-grid-cat">
-          <input type="text" placeholder="Category Name" value={newCategory.name} onChange={e => setNewCategory({...newCategory, name: e.target.value})} className="input-group" style={{ marginBottom: 0, width: '100%' }} />
-          <select value={newCategory.type} onChange={e => setNewCategory({...newCategory, type: e.target.value})} className="input-group" style={{ marginBottom: 0, width: '100%' }}>
-            <option value="Income">Income</option>
-            <option value="Expense">Expense</option>
+        <div className="settings-grid-cat" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
+          <input type="text" placeholder="Category Name" value={newCategory.name} onChange={e => setNewCategory({...newCategory, name: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)' }} />
+          <select value={newCategory.type} onChange={e => setNewCategory({...newCategory, type: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)' }}>
+            <option value="Income">Income (+)</option>
+            <option value="Expense">Expense (-)</option>
           </select>
-          <button className="btn btn-primary" onClick={handleAddCategory} style={{ width: '100%', padding: '8px' }}><Plus size={20} /></button>
+          <button className="btn btn-primary" onClick={handleAddCategory} style={{ width: '100%', minHeight: '44px', padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Plus size={18} /> Add Category</button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {categories.map(c => (
@@ -704,9 +707,34 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
         </div>
       </div>
 
-      <button className="btn btn-primary w-full" onClick={handleSaveAll} disabled={saving} style={{ marginBottom: '24px' }}>
-        {saving ? 'Syncing...' : 'Save & Sync Settings'} <Save size={18} />
+      <button 
+        onClick={() => { if(setAuthUser) setAuthUser(null); window.location.href = '/'; }} 
+        className="btn btn-outline text-danger w-full" 
+        style={{ marginBottom: '24px', minHeight: '46px', borderColor: 'var(--danger-bg)', fontSize: '0.95rem', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+      >
+        <LogOut size={18} /> Log Out from ToCashBook
       </button>
+
+      {/* About Thosho Tech Section */}
+      <div className="card glass animate-fade-in" style={{ padding: '24px', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.2)', background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%)', borderRadius: '16px', marginBottom: '20px' }}>
+        <h3 style={{ margin: '0 0 6px 0', fontSize: '1.2rem', fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.5px' }}>
+          Thosho Tech
+        </h3>
+        <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+          Engineering reliable, state-of-the-art fintech & retail software solutions for modern businesses.
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', fontSize: '0.88rem' }}>
+          <a href="https://thoshotech.com/" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#3b82f6', textDecoration: 'none', fontWeight: '600' }}>
+            <Globe size={16} /> https://thoshotech.com/
+          </a>
+          <a href="mailto:contact@thoshotech.com" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#3b82f6', textDecoration: 'none', fontWeight: '600' }}>
+            <Mail size={16} /> contact@thoshotech.com
+          </a>
+        </div>
+        <div style={{ marginTop: '16px', fontSize: '0.75rem', color: 'var(--text-secondary)', opacity: 0.8 }}>
+          ToCashBook v2.5.0 · All Rights Reserved © {new Date().getFullYear()} Thosho Tech
+        </div>
+      </div>
     </div>
   );
 }

@@ -22,6 +22,7 @@ export default function BossHome({ user, setAuthUser }) {
   const [usersList, setUsersList] = useState([]);
   const [syncing, setSyncing] = useState(false);
   const [showStaffSummary, setShowStaffSummary] = useState(false);
+  const [showRecentEntries, setShowRecentEntries] = useState(true);
   const [showBooks, setShowBooks] = useState(true);
   const [settings, setSettings] = useState({});
   const navigate = useNavigate();
@@ -471,13 +472,20 @@ export default function BossHome({ user, setAuthUser }) {
 
       {/* Recent Entries */}
       <div className="card glass" style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showRecentEntries ? '16px' : '0' }}>
           <h3 style={{ margin: 0 }}>📋 Recent Entries</h3>
-          <Link to="/entries" style={{ fontSize: '0.82rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: '600' }}>View All →</Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button className="btn btn-outline" style={{ padding: '6px 14px', fontSize: '0.8rem' }} onClick={() => setShowRecentEntries(!showRecentEntries)}>
+              {showRecentEntries ? 'Hide' : 'View All'}
+            </button>
+            <Link to="/entries" style={{ fontSize: '0.82rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: '600', marginLeft: '4px' }}>Full List →</Link>
+          </div>
         </div>
-        {transactions.length === 0 ? (
-          <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px 0' }}>No entries yet. Staff entries will appear here after sync.</p>
-        ) : (
+        {showRecentEntries && (
+          <div style={{ animation: 'fadeIn 0.3s ease' }}>
+            {transactions.length === 0 ? (
+              <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px 0' }}>No entries yet. Staff entries will appear here after sync.</p>
+            ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {[...transactions].sort((a, b) => {
               const diff = new Date(b.date) - new Date(a.date);
@@ -499,6 +507,8 @@ export default function BossHome({ user, setAuthUser }) {
                 </div>
               </div>
             ))}
+          </div>
+            )}
           </div>
         )}
       </div>
@@ -562,7 +572,7 @@ export default function BossHome({ user, setAuthUser }) {
                     type="button" 
                     onClick={handlePickContact}
                     className="btn btn-outline mobile-only" 
-                    style={{ padding: '4px 8px', fontSize: '0.75rem', gap: '4px' }}
+                    style={{ padding: '6px 12px', fontSize: '0.8rem', gap: '6px', color: '#3b82f6', fontWeight: '600' }}
                   >
                     <Contact size={14}/> Pick Contact
                   </button>

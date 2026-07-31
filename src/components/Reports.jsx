@@ -260,21 +260,45 @@ export default function Reports() {
     ]
   };
 
-  const exportCSV = () => {
+  const exportCSV = async () => {
     let csv = "Date,Type,Category,Party Name,Payment Mode,Collected By,Reference,Amount,Remarks\n";
     filteredTransactions.forEach(t => {
-      csv += `${formatDate(t.date)},${t.type},${t.category},${t.partyName || ''},${t.paymentMode || 'Cash'},${getStaffName(t.user)},${t.reference || ''},${t.amount},"${t.remarks || ''}"\n`;
+      const party = String(t.partyName || '').replace(/"/g, '""');
+      const staff = String(getStaffName(t.user) || '').replace(/"/g, '""');
+      const ref = String(t.reference || '').replace(/"/g, '""');
+      const rem = String(t.remarks || '').replace(/"/g, '""');
+      csv += `${formatDate(t.date)},${t.type},"${t.category || ''}","${party}",${t.paymentMode || 'Cash'},"${staff}","${ref}",${t.amount || 0},"${rem}"\n`;
     });
     
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `tocashbook_${dateFilter}_report.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const csvFilename = `tocashbook_${dateFilter}_report.csv`;
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const result = await Filesystem.writeFile({
+          path: csvFilename,
+          data: btoa(unescape(encodeURIComponent(csv))),
+          directory: Directory.Cache
+        });
+        await Share.share({
+          title: 'Cashbook CSV Report',
+          text: 'Here is the exported CSV report.',
+          url: result.uri,
+          dialogTitle: 'Share CSV Report'
+        });
+      } catch (err) {
+        console.error("Native CSV Share Error:", err);
+        alert("Failed to save or share CSV: " + err.message);
+      }
+    } else {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", csvFilename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   const exportPDF = async () => {
@@ -521,9 +545,12 @@ export default function Reports() {
   return (
     <div className="container animate-fade-in pb-20">
       <div className="header glass" style={{ padding: '16px 20px', borderRadius: '16px', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
           <FileText size={24} className="text-primary" />
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Reports</h2>
+          <span style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.5px', textAlign: 'center', flex: '1 1 auto' }}>
+            {settings.BrandName || 'ToCashBook'}
+          </span>
+          <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: '600' }}>Reports</h2>
         </div>
       </div>
 
@@ -684,7 +711,7 @@ export default function Reports() {
         <div className="card glass animate-fade-in" style={{ marginBottom: '24px' }}>
           <h3 style={{ marginBottom: '20px' }}>Advanced Analytics</h3>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', width: '100%' }}>
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h4 style={{ margin: 0, fontSize: '1rem' }}>Category Breakdown</h4>
@@ -706,8 +733,8 @@ export default function Reports() {
                 </div>
               </div>
               {Object.keys(chartCategoryTotals).length > 0 ? (
-                <div style={{ height: '250px', display: 'flex', justifyContent: 'center' }}>
-                    <Doughnut data={doughnutData} options={{ maintainAspectRatio: false }} />
+                <div style={{ height: '250px', display: 'flex', justifyContent: 'center', position: 'relative' }}>
+                    <Doughnut data={doughnutData} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1', font: { size: 11, weight: '500' } } } } }} />
                 </div>
               ) : (
                 <p className="text-secondary text-center">No {chartMode.toLowerCase()}s recorded.</p>
@@ -717,13 +744,17 @@ export default function Reports() {
             <div>
               <h4 style={{ margin: 0, marginBottom: '16px', fontSize: '1rem' }}>Monthly Trend</h4>
               {barLabels.length > 0 ? (
-                <div style={{ height: '250px' }}>
+                <div style={{ height: '250px', position: 'relative' }}>
                   <Bar 
                     data={barData} 
                     options={{
                       maintainAspectRatio: false,
                       responsive: true,
-                      scales: { y: { beginAtZero: true } }
+                      scales: { 
+                        x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
+                        y: { beginAtZero: true, ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
+                      },
+                      plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 12, weight: '600' } } } }
                     }} 
                   />
                 </div>
