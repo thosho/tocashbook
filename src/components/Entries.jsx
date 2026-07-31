@@ -207,7 +207,7 @@ export default function Entries() {
       doc.setTextColor(100, 100, 100);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
-      doc.text("ToCashBook", 50, footerY, { align: "center" });
+      doc.text("Open Cashbook", 50, footerY, { align: "center" });
       
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7);

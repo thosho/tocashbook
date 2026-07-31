@@ -270,7 +270,7 @@ export default function Reports() {
       csv += `${formatDate(t.date)},${t.type},"${t.category || ''}","${party}",${t.paymentMode || 'Cash'},"${staff}","${ref}",${t.amount || 0},"${rem}"\n`;
     });
     
-    const csvFilename = `tocashbook_${dateFilter}_report.csv`;
+    const csvFilename = `opencashbook_${dateFilter}_report.csv`;
     if (Capacitor.isNativePlatform()) {
       try {
         const result = await Filesystem.writeFile({
@@ -500,7 +500,7 @@ export default function Reports() {
         doc.setTextColor(150, 150, 150);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(8);
-        doc.text("ToCashBook", 14, footerY);
+        doc.text("Open Cashbook", 14, footerY);
         
         doc.setFont("helvetica", "normal");
         doc.setFontSize(7);
@@ -514,7 +514,7 @@ export default function Reports() {
         doc.link(14, footerY + 5, linkWidth, 5, { url: 'https://thoshotech.com' });
       }
 
-      const pdfFilename = `tocashbook_${dateFilter}_report.pdf`;
+      const pdfFilename = `opencashbook_${dateFilter}_report.pdf`;
       if (Capacitor.isNativePlatform()) {
         try {
           const pdfBase64 = doc.output('datauristring').split(',')[1];
@@ -548,7 +548,7 @@ export default function Reports() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
           <FileText size={24} className="text-primary" />
           <span style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.5px', textAlign: 'center', flex: '1 1 auto' }}>
-            {settings.BrandName || 'ToCashBook'}
+            {settings.BrandName || 'Open Cashbook'}
           </span>
           <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: '600' }}>Reports</h2>
         </div>

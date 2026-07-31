@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { APP_NAME, APP_TAGLINE } from '../services/authUtils';
 
 export default function SplashScreen({ onDone }) {
   const [phase, setPhase] = useState('in'); // 'in' | 'show' | 'out'
@@ -82,16 +83,16 @@ export default function SplashScreen({ onDone }) {
           fontFamily: "'Outfit', sans-serif",
           textShadow: '0 2px 20px rgba(0,0,0,0.3)',
         }}>
-          ToCashBook
+          {APP_NAME}
         </h1>
         <p style={{
-          color: 'rgba(255,255,255,0.65)',
-          fontSize: 'clamp(0.75rem, 3vw, 0.875rem)',
-          margin: '6px 0 0',
-          letterSpacing: '0.05em',
-          fontWeight: '400',
+          color: 'rgba(255,255,255,0.75)',
+          fontSize: 'clamp(0.8rem, 3.5vw, 0.95rem)',
+          margin: '8px 0 0',
+          letterSpacing: '0.04em',
+          fontWeight: '500',
         }}>
-          Smart Business Finance Manager
+          {APP_TAGLINE}
         </p>
       </div>
 

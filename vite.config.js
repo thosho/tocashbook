@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'ToCashBook',
-        short_name: 'ToCashBook',
-        description: 'Manage your business finances securely, even offline.',
+        name: 'Open Cashbook',
+        short_name: 'Open Cashbook',
+        description: 'Your financial data stays truly yours.',
         theme_color: '#4f46e5',
         background_color: '#0f172a',
         display: 'standalone',

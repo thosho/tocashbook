@@ -92,7 +92,7 @@ export default function PWAPrompt() {
             <Download size={24} />
           </div>
           <div>
-            <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', color: 'var(--text-primary)' }}>Install ToCashBook</h4>
+            <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', color: 'var(--text-primary)' }}>Install Open Cashbook</h4>
             <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               Add to your home screen for fast, offline access.
             </p>

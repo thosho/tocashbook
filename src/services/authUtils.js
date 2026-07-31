@@ -42,6 +42,7 @@ export const verifyPIN = async (plainPin, storedHash) => {
   return String(plainPin) === String(storedHash);
 };
 
-// Global App Info — centralized so Settings and Sidebar version numbers always match perfectly
-export const APP_NAME = "ToCashBook";
+// Global App Info — centralized so Settings, Splash, and Sidebar always match perfectly
+export const APP_NAME = "Open Cashbook";
+export const APP_TAGLINE = "Your financial data stays truly yours.";
 export const APP_VERSION = "v1.0";

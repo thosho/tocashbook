@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUsers, getApiLink, setApiLink, initDb, getSettings, getApiSecret, setApiSecret } from '../services/localDb';
 import { fetchAllData } from '../services/sheetsApi';
-import { verifyPIN } from '../services/authUtils';
+import { verifyPIN, APP_NAME, APP_TAGLINE } from '../services/authUtils';
 import { Wallet, Settings, Link as LinkIcon, LogIn, Building2, ChevronDown, Plus, Trash2, Key } from 'lucide-react';
 import localforage from 'localforage';
 import { useTranslation } from 'react-i18next';
@@ -172,7 +172,10 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
           }}>
             <Wallet size={30} color="white" />
           </div>
-          <h1 style={{ fontSize: '1.75rem', margin: '0 0 4px' }}>ToCashBook</h1>
+          <h1 style={{ fontSize: '1.75rem', margin: '0 0 4px', fontWeight: '700' }}>{APP_NAME}</h1>
+          <p style={{ color: 'var(--primary)', fontSize: '0.8rem', fontWeight: '600', margin: '0 0 6px 0', letterSpacing: '0.3px' }}>
+            {APP_TAGLINE}
+          </p>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0 }}>
             {showSetup ? 'Connect your business' : t('login.title')}
           </p>

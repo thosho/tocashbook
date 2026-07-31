@@ -303,7 +303,7 @@ export default function BossHome({ user, setAuthUser }) {
     const todayTx = transactions.filter(t => t.date === todayStr);
     const todayIncome = todayTx.filter(t => t.type === 'Income').reduce((a, b) => a + (b.amount || 0), 0);
     const todayExpense = todayTx.filter(t => t.type === 'Expense').reduce((a, b) => a + (b.amount || 0), 0);
-    const text = `📊 *${settings.BrandName || 'Business'} — Daily Summary*\n📅 Date: ${todayStr}\n\n✅ Cash In Today: ₹${todayIncome.toLocaleString()}\n❌ Cash Out Today: ₹${todayExpense.toLocaleString()}\n💰 Net Today: ₹${(todayIncome - todayExpense).toLocaleString()}\n\n📦 Total Entries Today: ${todayTx.length}\n💰 Balance: ₹${balance.toLocaleString()}\n\n_Powered by ToCashBook_`;
+    const text = `📊 *${settings.BrandName || 'Business'} — Daily Summary*\n📅 Date: ${todayStr}\n\n✅ Cash In Today: ₹${todayIncome.toLocaleString()}\n❌ Cash Out Today: ₹${todayExpense.toLocaleString()}\n💰 Net Today: ₹${(todayIncome - todayExpense).toLocaleString()}\n\n📦 Total Entries Today: ${todayTx.length}\n💰 Balance: ₹${balance.toLocaleString()}\n\n_Powered by Open Cashbook_`;
     if (navigator.share) {
       navigator.share({ title: 'Daily Cash Summary', text });
     } else {
@@ -333,10 +333,10 @@ export default function BossHome({ user, setAuthUser }) {
         {/* Center — Brand */}
         <div style={{ textAlign: 'center', flex: 1 }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary)', letterSpacing: '-0.5px', margin: 0, lineHeight: 1.2 }}>
-            {settings.BrandName || 'ToCashBook'}
+            {settings.BrandName || 'Open Cashbook'}
           </h1>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0, fontWeight: '500' }}>
-            {settings.Tagline || 'Developed by Thosho Tech'}
+            {settings.Tagline || 'Your financial data stays truly yours.'}
           </p>
         </div>
 
