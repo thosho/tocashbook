@@ -1,17 +1,24 @@
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { LayoutDashboard, PlusCircle, List, BarChart3, Settings, Users } from 'lucide-react';
 import OfflineBanner from './OfflineBanner';
+import { useState, useEffect } from 'react';
+import { getSettings } from '../services/localDb';
 
 export default function SidebarLayout() {
   const location = useLocation();
   const currentPath = location.pathname;
+  const [settings, setSettings] = useState({});
+
+  useEffect(() => {
+    getSettings().then(s => setSettings(s || {}));
+  }, []);
 
   return (
     <div className="app-layout">
       {/* Desktop Sidebar */}
       <div className="sidebar">
         <div className="sidebar-header">
-          <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--primary)' }}>ToCashBook</h2>
+          <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--primary)' }}>{settings.BrandName || 'ToCashBook'}</h2>
         </div>
         <div className="sidebar-nav">
           <Link to="/dashboard" className={`sidebar-item ${currentPath === '/dashboard' ? 'active' : ''}`}>
@@ -34,13 +41,8 @@ export default function SidebarLayout() {
           </Link>
         </div>
         <div className="sidebar-footer">
-          <div style={{ fontWeight: 'bold' }}>ToCashBook v1.0</div>
-          <div>Developed by</div>
-          <div>
-            <a href="https://thoshotech.com" target="_blank" rel="noopener noreferrer">
-              Thosho Tech
-            </a>
-          </div>
+          <div style={{ fontWeight: 'bold' }}>{settings.BrandName || 'ToCashBook'}</div>
+          <div>{settings.Tagline || 'Developed by Thosho Tech'}</div>
         </div>
       </div>
 

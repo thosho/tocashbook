@@ -202,8 +202,8 @@ export default function BossHome({ user, setAuthUser }) {
   return (
     <div className="container animate-fade-in pb-20" style={{ padding: '20px' }}>
       <div style={{ textAlign: 'center', margin: '16px 0 24px 0' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--primary)', letterSpacing: '-0.5px', margin: '0 0 4px 0' }}>ToCashBook</h1>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0', fontWeight: '500' }}>Developed by Thosho Tech</p>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--primary)', letterSpacing: '-0.5px', margin: '0 0 4px 0' }}>{settings.BrandName || 'ToCashBook'}</h1>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0', fontWeight: '500' }}>{settings.Tagline || 'Developed by Thosho Tech'}</p>
       </div>
 
       <div className="header glass" style={{ padding: '10px 16px', borderRadius: '12px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
