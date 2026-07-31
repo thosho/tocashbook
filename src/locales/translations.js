@@ -1,43 +1,31 @@
 export const resources = {
   en: {
     translation: {
-      login: {
-        title: "CashBook Login", phone: "Phone Number", pin: "PIN", login_btn: "Login", pick_contact: "Pick Contact", invalid_creds: "Invalid credentials", enter_details: "Enter phone and PIN", select_branch: "Select Branch"
-      },
+      login: { title: "Open Cashbook Login", phone: "Phone Number", pin: "PIN", login_btn: "Login", pick_contact: "Pick Contact", invalid_creds: "Invalid credentials", enter_details: "Enter phone and PIN", select_branch: "Select Branch" },
       nav: { dashboard: "Dashboard", reports: "Reports", parties: "Parties", settings: "Settings", logout: "Logout" },
-      dashboard: {
-        net_balance: "Net Balance", cash_in: "Cash In", cash_out: "Cash Out", recent_transactions: "Recent Transactions", add_transaction: "Add Transaction", no_transactions: "No transactions yet"
-      },
-      transaction: {
-        type: "Type", income: "Income", expense: "Expense", amount: "Amount", category: "Category", party_name: "Party Name (Optional)", phone: "Phone (Optional)", payment_mode: "Payment Mode", reference: "Reference No.", remarks: "Remarks", receipt: "Receipt Image", recurring: "Recurring", save: "Save Entry", edit: "Edit Entry", delete: "Delete", none: "None", daily: "Daily", weekly: "Weekly", monthly: "Monthly"
-      },
-      parties: {
-        customer_dashboard: "Customer Dashboard", search: "Search name or phone...", you_will_give: "You will give", you_will_get: "You will get", net_received: "Net Received", net_paid: "Net Paid", no_parties: "No parties found"
-      },
-      reports: {
-        reports_title: "Reports", download_pdf: "Download PDF", filter_all: "All Time", filter_today: "Today", filter_month: "This Month", filter_custom: "Custom", from: "From", to: "To", apply: "Apply", net_profit: "Net Profit", whatsapp_reminder: "Send WhatsApp Reminder"
-      },
-      settings: {
-        title: "Business Settings", appearance: "Appearance", auto: "Auto (System)", light: "Light Mode", dark: "Dark Mode", brand_info: "Brand Information", brand_name: "Brand Name", tagline: "Tagline / Short Info", address: "Address", business_phone: "Business Phone", email: "Email", website: "Website", social_media: "Social Media", upi_id: "Business UPI ID", logo: "Company Logo", date_format: "PDF Date Format", opening_balance: "Opening Balance", session_timeout: "Session Timeout", digital_card: "Digital Business Card", share_card: "Share Card", admin_security: "Admin Security", admin_phone: "Admin Phone", admin_pin: "Admin PIN", manage_staff: "Manage Staff", name: "Name", manage_categories: "Manage Categories", category_name: "Category Name", data_management: "Data Management", export_db: "Export Backup", import_db: "Import Backup", push_notifications: "Push Notifications", topic_name: "Topic Name", enable_device: "Enable on This Device", save_sync: "Save & Sync Settings"
-      },
+      dashboard: { net_balance: "Net Balance", cash_in: "Cash In", cash_out: "Cash Out", recent_transactions: "Recent Transactions", add_transaction: "Add Transaction", no_transactions: "No transactions yet" },
+      transaction: { type: "Type", income: "Income", expense: "Expense", amount: "Amount", category: "Category", party_name: "Party Name (Optional)", phone: "Phone (Optional)", payment_mode: "Payment Mode", reference: "Reference No.", remarks: "Remarks", receipt: "Receipt Image", recurring: "Recurring", save: "Save Entry", edit: "Edit Entry", delete: "Delete", none: "None", daily: "Daily", weekly: "Weekly", monthly: "Monthly" },
+      parties: { customer_dashboard: "Customer Dashboard", search: "Search name or phone...", you_will_give: "You will give", you_will_get: "You will get", net_received: "Net Received", net_paid: "Net Paid", no_parties: "No parties found" },
+      reports: { reports_title: "Reports", download_pdf: "Download PDF", filter_all: "All Time", filter_today: "Today", filter_month: "This Month", filter_custom: "Custom", from: "From", to: "To", apply: "Apply", net_profit: "Net Profit", whatsapp_reminder: "Send WhatsApp Reminder" },
+      settings: { title: "Business Settings", appearance: "Appearance", auto: "Auto (System)", light: "Light Mode", dark: "Dark Mode", brand_info: "Brand Information", brand_name: "Brand Name", tagline: "Tagline / Short Info", address: "Address", business_phone: "Business Phone", email: "Email", website: "Website", social_media: "Social Media", upi_id: "Business UPI ID", logo: "Company Logo", date_format: "PDF Date Format", opening_balance: "Opening Balance", session_timeout: "Session Timeout", digital_card: "Digital Business Card", share_card: "Share Card", admin_security: "Admin Security", admin_phone: "Admin Phone", admin_pin: "Admin PIN", manage_staff: "Manage Staff", name: "Name", manage_categories: "Manage Categories", category_name: "Category Name", data_management: "Data Management", export_db: "Export Backup", import_db: "Import Backup", push_notifications: "Push Notifications", topic_name: "Topic Name", enable_device: "Enable on This Device", save_sync: "Save & Sync Settings" },
       common: { language: "Language" }
     }
   },
   hi: {
     translation: {
-      login: { title: "कैशबुक लॉगिन", phone: "फ़ोन नंबर", pin: "पिन", login_btn: "लॉगिन करें", pick_contact: "संपर्क चुनें", invalid_creds: "अमान्य विवरण", enter_details: "फ़ोन और पिन दर्ज करें", select_branch: "शाखा चुनें" },
+      login: { title: "ओपन कैशबुक लॉगिन", phone: "फ़ोन नंबर", pin: "पिन", login_btn: "लॉगिन करें", pick_contact: "संपर्क चुनें", invalid_creds: "अमान्य विवरण", enter_details: "फ़ोन और पिन दर्ज करें", select_branch: "शाखा चुनें" },
       nav: { dashboard: "डैशबोर्ड", reports: "रिपोर्ट्स", parties: "पार्टियां", settings: "सेटिंग्स", logout: "लॉग आउट" },
       dashboard: { net_balance: "कुल शेष", cash_in: "पैसे आए", cash_out: "पैसे गए", recent_transactions: "हाल के लेन-देन", add_transaction: "लेन-देन जोड़ें", no_transactions: "कोई लेन-देन नहीं" },
       transaction: { type: "प्रकार", income: "आय (Income)", expense: "खर्च (Expense)", amount: "राशि", category: "श्रेणी", party_name: "पार्टी का नाम", phone: "फ़ोन", payment_mode: "भुगतान का तरीका", reference: "संदर्भ संख्या", remarks: "टिप्पणी", receipt: "रसीद की फोटो", recurring: "आवर्ती", save: "सेव करें", edit: "संपादित करें", delete: "हटाएं", none: "कोई नहीं", daily: "दैनिक", weekly: "साप्ताहिक", monthly: "मासिक" },
       parties: { customer_dashboard: "ग्राहक डैशबोर्ड", search: "नाम या फ़ोन खोजें...", you_will_give: "आपको देने हैं", you_will_get: "आपको मिलेंगे", net_received: "कुल प्राप्त", net_paid: "कुल भुगतान", no_parties: "कोई पार्टी नहीं मिली" },
       reports: { reports_title: "रिपोर्ट्स", download_pdf: "पीडीएफ डाउनलोड करें", filter_all: "सभी", filter_today: "आज", filter_month: "इस महीने", filter_custom: "कस्टम", from: "से", to: "तक", apply: "लागू करें", net_profit: "शुद्ध लाभ", whatsapp_reminder: "व्हाट्सएप रिमाइंडर भेजें" },
-      settings: { title: "व्यापार सेटिंग्स", appearance: "दिखावट", auto: "ऑटो", light: "लाइट मोड", dark: "डार्क मोड", brand_info: "ब्रांड जानकारी", brand_name: "ब्रांड का नाम", tagline: "टैगलाइन", address: "पता", business_phone: "व्यापार फ़ोन", email: "ईमेल", website: "वेबसाइट", social_media: "सोशल मीडिया", upi_id: "व्यापार यूपीआई आईडी", logo: "लोगो", date_format: "दिनांक प्रारूप", opening_balance: "शुरुआती शेष", session_timeout: "सत्र समय समाप्ति", digital_card: "डिजिटल बिजनेस कार्ड", share_card: "कार्ड शेयर करें", admin_security: "एडमिन सुरक्षा", admin_phone: "एडमिन फ़ोन", admin_pin: "एडमिन पिन", manage_staff: "स्टाफ प्रबंधित करें", name: "नाम", manage_categories: "श्रेणियाँ प्रबंधित करें", category_name: "श्रेणी का नाम", data_management: "डेटा प्रबंधन", export_db: "बैकअप निर्यात करें", import_db: "बैकअप आयात करें", push_notifications: "पुश सूचनाएँ", topic_name: "विषय का नाम", enable_device: "इस डिवाइस पर चालू करें", save_sync: "सेटिंग्स सेव और सिंक करें" },
+      settings: { title: "व्यापार सेटिंग्स", appearance: "दिखावट", auto: "ऑटो", light: "लाइट मोड", dark: "डार्क मोड", brand_info: "ब्रांड जानकारी", brand_name: "ब्रांड का नाम", tagline: "टэгलाइन", address: "पता", business_phone: "व्यापार फ़ोन", email: "ईमेल", website: "वेबसाइट", social_media: "सोशल मीडिया", upi_id: "व्यापार यूपीआई आईडी", logo: "लोगो", date_format: "दिनांक प्रारूप", opening_balance: "शुरुआती शेष", session_timeout: "सत्र समय समाप्ति", digital_card: "डिजिटल बिजनेस कार्ड", share_card: "कार्ड शेयर करें", admin_security: "एडमिन सुरक्षा", admin_phone: "एडमिन फ़ोन", admin_pin: "एडमिन पिन", manage_staff: "स्टाफ प्रबंधित करें", name: "नाम", manage_categories: "श्रेणियाँ प्रबंधित करें", category_name: "श्रेणी का नाम", data_management: "डेटा प्रबंधन", export_db: "बैकअप निर्यात करें", import_db: "बैकअप आयात करें", push_notifications: "पुश सूचनाएँ", topic_name: "विषय का नाम", enable_device: "इस डिवाइस पर चालू करें", save_sync: "सेटिंग्स सेव और सिंक करें" },
       common: { language: "भाषा (Language)" }
     }
   },
   bn: {
     translation: {
-      login: { title: "ক্যাশবুক লগইন", phone: "ফোন নম্বর", pin: "পিন", login_btn: "লগইন", pick_contact: "যোগাযোগ চয়ন করুন", invalid_creds: "ভুল তথ্য", enter_details: "ফোন এবং পিন দিন", select_branch: "শাখা নির্বাচন করুন" },
+      login: { title: "ওপেন ক্যাশবুক লগইন", phone: "ফোন নম্বর", pin: "পিন", login_btn: "লগইন", pick_contact: "যোগাযোগ চয়ন করুন", invalid_creds: "ভুল তথ্য", enter_details: "ফোন এবং পিন দিন", select_branch: "শাখা নির্বাচন করুন" },
       nav: { dashboard: "ড্যাশবোর্ড", reports: "রিপোর্ট", parties: "পার্টি", settings: "সেটিংস", logout: "লগআউট" },
       dashboard: { net_balance: "মোট ব্যালেন্স", cash_in: "টাকা এসেছে", cash_out: "টাকা গেছে", recent_transactions: "সাম্প্রতিক লেনদেন", add_transaction: "লেনদেন যোগ করুন", no_transactions: "কোনো লেনদেন নেই" },
       transaction: { type: "ধরন", income: "আয়", expense: "ব্যয়", amount: "পরিমাণ", category: "বিভাগ", party_name: "পার্টির নাম", phone: "ফোন", payment_mode: "পেমেন্ট পদ্ধতি", reference: "রেফারেন্স নম্বর", remarks: "মন্তব্য", receipt: "রসিদের ছবি", recurring: "পুনরাবৃত্ত", save: "সংরক্ষণ করুন", edit: "সম্পাদনা করুন", delete: "মুছুন", none: "কোনটি না", daily: "দৈনিক", weekly: "সাপ্তাহিক", monthly: "মাসিক" },
@@ -49,19 +37,19 @@ export const resources = {
   },
   mr: {
     translation: {
-      login: { title: "कॅशबुक लॉगिन", phone: "फोन नंबर", pin: "पिन", login_btn: "लॉगिन करा", pick_contact: "संपर्क निवडा", invalid_creds: "अवैध माहिती", enter_details: "फोन आणि पिन प्रविष्ट करा", select_branch: "शाखा निवडा" },
+      login: { title: "ओपन कॅशबुक लॉगिन", phone: "फोन नंबर", pin: "पिन", login_btn: "लॉगिन करा", pick_contact: "संपर्क निवडा", invalid_creds: "अवैध माहिती", enter_details: "फोन आणि पिन प्रविष्ट करा", select_branch: "शाखा निवडा" },
       nav: { dashboard: "डॅशबोर्ड", reports: "अहवाल", parties: "पार्ट्या", settings: "सेटिंग्ज", logout: "लॉगआउट" },
       dashboard: { net_balance: "एकूण शिल्लक", cash_in: "पैसे आले", cash_out: "पैसे गेले", recent_transactions: "अलीकडील व्यवहार", add_transaction: "व्यवहार जोडा", no_transactions: "कोणतेही व्यवहार नाहीत" },
       transaction: { type: "प्रकार", income: "जमा", expense: "खर्च", amount: "रक्कम", category: "श्रेणी", party_name: "पार्टीचे नाव", phone: "फोन", payment_mode: "पेमेंट पद्धत", reference: "संदर्भ क्रमांक", remarks: "टिप्पणी", receipt: "पावती", recurring: "आवर्ती", save: "जतन करा", edit: "संपादित करा", delete: "काढून टाका", none: "काहीही नाही", daily: "दैनिक", weekly: "साप्ताहिक", monthly: "मासिक" },
       parties: { customer_dashboard: "ग्राहक डॅशबोर्ड", search: "नाव किंवा फोन शोधा...", you_will_give: "तुम्ही द्याल", you_will_get: "तुम्हाला मिळतील", net_received: "एकूण जमा", net_paid: "एकूण दिले", no_parties: "कोणतीही पार्टी आढळली नाही" },
       reports: { reports_title: "अहवाल", download_pdf: "PDF डाउनलोड करा", filter_all: "सर्व", filter_today: "आज", filter_month: "या महिन्यात", filter_custom: "कस्टम", from: "पासून", to: "पर्यंत", apply: "लागू करा", net_profit: "निव्वळ नफा", whatsapp_reminder: "WhatsApp रिमाइंडर पाठवा" },
-      settings: { title: "व्यवसाय सेटिंग्ज", appearance: "देखावा", auto: "ऑटो", light: "लाईट मोड", dark: "डार्क मोड", brand_info: "ब्रँड माहिती", brand_name: "ब्रँडचे नाव", tagline: "टॅगलाईन", address: "पत्ता", business_phone: "व्यवसाय फोन", email: "ईमेल", website: "वेबसाइट", social_media: "सोशल मीडिया", upi_id: "व्यवसाय UPI आयडी", logo: "लोगो", date_format: "तारीख स्वरूप", opening_balance: "सुरुवातीची शिल्लक", session_timeout: "सत्र कालबाह्य", digital_card: "डिजिटल व्यवसाय कार्ड", share_card: "कार्ड शेअर करा", admin_security: "प्रशासक सुरक्षा", admin_phone: "प्रशासक फोन", admin_pin: "प्रशासक पिन", manage_staff: "कर्मचारी व्यवस्थापन", name: "नाव", manage_categories: "श्रेणी व्यवस्थापन", category_name: "श्रेणीचे नाव", data_management: "डेटा व्यवस्थापन", export_db: "बॅकअप निर्यात करा", import_db: "बॅकअप आयात करा", push_notifications: "पुश सूचना", topic_name: "विषयाचे नाव", enable_device: "या डिव्हाइसवर सक्षम करा", save_sync: "सेटिंग्ज जतन करा आणि सिंक करा" },
+      settings: { title: "व्यवसाय सेटिंग्ज", appearance: "देखावा", auto: "ऑटो", light: "लाईट मोड", dark: "डार्क मोड", brand_info: "ब्रँड माहिती", brand_name: "ब्रँडचे नाव", tagline: "टॅगलाईन", address: "पत्ता", business_phone: "व्यवसाय फोन", email: "ईमेल", website: "वेबसाइट", social_media: "सोशल मीडिया", upi_id: "व्यवसाय UPI आयडी", logo: "लोगो", date_format: "तारीख स्वरूप", opening_balance: "सुरुवातीची शिल्लक", session_timeout: "सत्र कालबाह्य", digital_card: "डिजिटल व्यवसाय कार्ड", share_card: "कार्ड शेअर करा", admin_security: "प्रशासक सुरक्षा", admin_phone: "प्रशासक फोन", admin_pin: "प्रशासक पिन", manage_staff: "कर्मचारी व्यवस्थापन", name: "नाव", manage_categories: "श्रेणी व्यवस्थापन", category_name: "श्रेणीचे नाव", data_management: "डेटा व्यवस्थापन", export_db: "बॅकअप निर्यात करा", import_db: "बॅकअप आयात करा", push_notifications: "पुش सूचना", topic_name: "विषयाचे नाव", enable_device: "या डिव्हाइसवर सक्षम करा", save_sync: "सेटिंग्ज जतन करा आणि सिंक करा" },
       common: { language: "भाषा" }
     }
   },
   ta: {
     translation: {
-      login: { title: "கேஷ்புக் உள்நுழைவு", phone: "தொலைபேசி எண்", pin: "பின் (PIN)", login_btn: "உள்நுழை", pick_contact: "தொடர்பைத் தேர்ந்தெடு", invalid_creds: "தவறான விவரங்கள்", enter_details: "விவரங்களை உள்ளிடவும்", select_branch: "கிளையைத் தேர்ந்தெடு" },
+      login: { title: "ஓபன் கேஷ்புக் உள்நுழைவு", phone: "தொலைபேசி எண்", pin: "பின் (PIN)", login_btn: "உள்நுழை", pick_contact: "தொடர்பைத் தேர்ந்தெடு", invalid_creds: "தவறான விவரங்கள்", enter_details: "விவரங்களை உள்ளிடவும்", select_branch: "கிளையைத் தேர்ந்தெடு" },
       nav: { dashboard: "முகப்பு", reports: "அறிக்கைகள்", parties: "பார்ட்டிகள்", settings: "அமைப்புகள்", logout: "வெளியேறு" },
       dashboard: { net_balance: "நிகர இருப்பு", cash_in: "பணம் வந்தது", cash_out: "பணம் சென்றது", recent_transactions: "சமீபத்திய பரிவர்த்தனைகள்", add_transaction: "பரிவர்த்தனை சேர்", no_transactions: "பரிவர்த்தனைகள் இல்லை" },
       transaction: { type: "வகை", income: "வருமானம்", expense: "செலவு", amount: "தொகை", category: "பிரிவு", party_name: "பார்ட்டி பெயர்", phone: "தொலைபேசி", payment_mode: "பணம் செலுத்தும் முறை", reference: "குறிப்பு எண்", remarks: "குறிப்புகள்", receipt: "ரசீது", recurring: "தொடர்", save: "சேமி", edit: "திருத்து", delete: "நீக்கு", none: "இல்லை", daily: "தினசரி", weekly: "வாராந்திர", monthly: "மாதாந்திர" },
@@ -73,7 +61,7 @@ export const resources = {
   },
   te: {
     translation: {
-      login: { title: "క్యాష్‌బుక్ లాగిన్", phone: "ఫోన్ నంబర్", pin: "పిన్ (PIN)", login_btn: "లాగిన్", pick_contact: "కాంటాక్ట్ ఎంచుకోండి", invalid_creds: "తప్పుడు వివరాలు", enter_details: "వివరాలు నమోదు చేయండి", select_branch: "బ్రాంచ్ ఎంచుకోండి" },
+      login: { title: "ఓపెన్ క్యాష్‌బుక్ లాగిన్", phone: "ఫోన్ నంబర్", pin: "పిన్ (PIN)", login_btn: "లాగిన్", pick_contact: "కాంటాక్ట్ ఎంచుకోండి", invalid_creds: "తప్పుడు వివరాలు", enter_details: "వివరాలు నమోదు చేయండి", select_branch: "బ్రాంచ్ ఎంచుకోండి" },
       nav: { dashboard: "డాష్‌బోర్డ్", reports: "రిపోర్ట్స్", parties: "పార్టీలు", settings: "సెట్టింగులు", logout: "లాగ్అవుట్" },
       dashboard: { net_balance: "మొత్తం బ్యాలెన్స్", cash_in: "వచ్చిన డబ్బు", cash_out: "ఖర్చు అయిన డబ్బు", recent_transactions: "ఇటీవలి లావాదేవీలు", add_transaction: "లావాదేవీ జోడించండి", no_transactions: "లావాదేవీలు లేవు" },
       transaction: { type: "రకం", income: "ఆదాయం", expense: "ఖర్చు", amount: "మొత్తం", category: "వర్గం", party_name: "పార్టీ పేరు", phone: "ఫోన్", payment_mode: "చెల్లింపు పద్ధతి", reference: "రిఫరెన్స్ నంబర్", remarks: "వ్యాఖ్యలు", receipt: "రసీదు", recurring: "పునరావృతం", save: "సేవ్ చేయండి", edit: "సవరించండి", delete: "తొలగించండి", none: "ఏదీ లేదు", daily: "రోజువారీ", weekly: "వారానికి", monthly: "నెలకు" },
@@ -85,7 +73,7 @@ export const resources = {
   },
   gu: {
     translation: {
-      login: { title: "કેશબુક લોગિન", phone: "ફોન નંબર", pin: "પીન", login_btn: "લોગિન", pick_contact: "સંપર્ક પસંદ કરો", invalid_creds: "અમાન્ય વિગતો", enter_details: "વિગતો દાખલ કરો", select_branch: "શાખા પસંદ કરો" },
+      login: { title: "ઓપન કેશબુક લોગિન", phone: "ફોન નંબર", pin: "પીન", login_btn: "લોગિન", pick_contact: "સંપર્ક પસંદ કરો", invalid_creds: "અમાન્ય વિગતો", enter_details: "વિગતો દાખલ કરો", select_branch: "શાખા પસંદ કરો" },
       nav: { dashboard: "ડેશબોર્ડ", reports: "રિપોર્ટ્સ", parties: "પાર્ટીઓ", settings: "સેટિંગ્સ", logout: "લૉગ આઉટ" },
       dashboard: { net_balance: "કુલ બેલેન્સ", cash_in: "આવક", cash_out: "જાવક", recent_transactions: "તાજેતરના વ્યવહારો", add_transaction: "વ્યવહાર ઉમેરો", no_transactions: "કોઈ વ્યવહાર નથી" },
       transaction: { type: "પ્રકાર", income: "આવક", expense: "ખર્ચ", amount: "રકમ", category: "કેટેગરી", party_name: "પાર્ટીનું નામ", phone: "ફોન", payment_mode: "ચુકવણી પદ્ધતિ", reference: "સંદર્ભ નંબર", remarks: "નોંધ", receipt: "રસીદ", recurring: "રિકરિંગ", save: "સેવ કરો", edit: "ફેરફાર કરો", delete: "ડિલીટ કરો", none: "કોઈ નહિ", daily: "દૈનિક", weekly: "સાપ્તાહિક", monthly: "માસિક" },
@@ -95,9 +83,45 @@ export const resources = {
       common: { language: "ભાષા" }
     }
   },
+  kn: {
+    translation: {
+      login: { title: "ಓಪನ್ ಕ್ಯಾಶ್‌ಬುಕ್ ಲಾಗಿನ್", phone: "ಫೋನ್ ಸಂಖ್ಯೆ", pin: "ಪಿನ್ (PIN)", login_btn: "ಲಾಗಿನ್ ಮಾಡಿ", pick_contact: "ಸಂಪರ್ಕ ಆಯ್ಕೆಮಾಡಿ", invalid_creds: "ಅಮಾನ್ಯ ವಿವರಗಳು", enter_details: "ಫೋನ್ ಮತ್ತು ಪಿನ್ ನಮೂದಿಸಿ", select_branch: "ಶಾಖೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ" },
+      nav: { dashboard: "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್", reports: "ವರದಿಗಳು", parties: "ಪಾರ್ಟಿಗಳು", settings: "ಸೆಟ್ಟಿಂಗ್‌ಗಳು", logout: "ಲಾಗೌಟ್" },
+      dashboard: { net_balance: "ನಿವ್ವಳ ಬಾಕಿ", cash_in: "ಹಣ ಬಂದಿದೆ", cash_out: "ಹಣ ಖರ್ಚಾಗಿದೆ", recent_transactions: "ಇತ್ತೀಚಿನ ವಹಿವಾಟುಗಳು", add_transaction: "ವಹಿವಾಟು ಸೇರಿಸಿ", no_transactions: "ಯಾವುದೇ ವಹಿವಾಟುಗಳಿಲ್ಲ" },
+      transaction: { type: "ವಿಧ", income: "ಆದಾಯ", expense: "ಖರ್ಚು", amount: "ಮೊತ್ತ", category: "ವರ್ಗ", party_name: "ಪಾರ್ಟಿ ಹೆಸರು", phone: "ಫೋನ್", payment_mode: "ಪಾವತಿ ವಿಧಾನ", reference: "ಉಲ್ಲೇಖ ಸಂಖ್ಯೆ", remarks: "ಟಿಪ್ಪಣಿಗಳು", receipt: "ರಶೀದಿ", recurring: "ಮರುಕಳಿಸುವ", save: "ಉಳಿಸಿ", edit: "ಸಂಪાદಿಸಿ", delete: "ಅಳಿಸಿ", none: "ಯಾವುದೂ ಇಲ್ಲ", daily: "ದೈನಂದಿನ", weekly: "ಸಾಪ್ತಾಹಿಕ", monthly: "ಮಾಸಿಕ" },
+      parties: { customer_dashboard: "ಗ್ರಾಹಕ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್", search: "ಹೆಸರು ಅಥವಾ ಫೋನ್ ಹುಡುಕಿ...", you_will_give: "ನೀವು ನೀಡಬೇಕು", you_will_get: "ನಿಮಗೆ ಸಿಗುತ್ತದೆ", net_received: "ಒಟ್ಟು ಸ್ವೀಕರಿಸಲಾಗಿದೆ", net_paid: "ಒಟ್ಟು ಪಾವತಿಸಲಾಗಿದೆ", no_parties: "ಯಾವುದೇ ಪಾರ್ಟಿಗಳು ಸಿಗಲಿಲ್ಲ" },
+      reports: { reports_title: "ವರದಿಗಳು", download_pdf: "PDF ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ", filter_all: "ಎಲ್ಲಾ ಸಮಯ", filter_today: "ಇಂದು", filter_month: "ಈ ತಿಂಗಳು", filter_custom: "ಕಸ್ಟಮ್", from: "ನಿಂದ", to: "ವರೆಗೆ", apply: "ಅನ್ವಯಿಸಿ", net_profit: "ನಿವ್ವಳ ಲಾಭ", whatsapp_reminder: "WhatsApp ಜ್ಞಾಪನೆ" },
+      settings: { title: "ವ್ಯಾಪಾರ ಸೆಟ್ಟಿಂಗ್‌ಗಳು", appearance: "ಗೋಚರತೆ", auto: "ಆಟೋ", light: "ಲೈಟ್ ಮೋಡ್", dark: "ಡಾರ್ಕ್ ಮೋಡ್", brand_info: "ಬ್ರ್ಯಾಂಡ್ ಮಾಹಿತಿ", brand_name: "ಬ್ರ್ಯಾಂಡ್ ಹೆಸರು", tagline: "ಟ್ಯಾಗ್‌ಲೈನ್", address: "ವಿಳಾಸ", business_phone: "ವ್ಯಾಪಾರ ಫೋನ್", email: "ಇಮೇಲ್", website: "ವೆಬ್‌ಸೈಟ್", social_media: "ಸಾಮಾಜಿಕ ಮಾಧ್ಯಮ", upi_id: "ವ್ಯಾಪಾರ UPI ID", logo: "ಲೋಗೋ", date_format: "ದಿನಾಂಕ ಸ್ವರೂಪ", opening_balance: "ಆರಂಭಿಕ ಬಾಕಿ", session_timeout: "ಅವಧಿ ಮುಗಿದಿದೆ", digital_card: "ಡಿಜಿಟಲ್ ವ್ಯಾಪಾರ ಕಾರ್ಡ್", share_card: "ಕಾರ್ಡ್ ಹಂಚಿಕೊಳ್ಳಿ", admin_security: "ನಿರ್ವಾಹಕ ಭದ್ರತೆ", admin_phone: "ನಿರ್ವಾಹಕ ಫೋನ್", admin_pin: "ನಿರ್ವಾಹಕ ಪಿನ್", manage_staff: "ಸಿಬ್ಬಂದಿ ನಿರ್ವಹಣೆ", name: "ಹೆಸರು", manage_categories: "ವರ್ಗಗಳ ನಿರ್ವಹಣೆ", category_name: "ವರ್ಗದ ಹೆಸರು", data_management: "ಡೇಟಾ ನಿರ್ವಹಣೆ", export_db: "ಬ್ಯಾಕಪ್ ರಫ್ತು ಮಾಡಿ", import_db: "ಬ್ಯಾಕಪ್ ಆಮದು ಮಾಡಿ", push_notifications: "ಪುಶ್ ಅಧಿಸೂಚನೆಗಳು", topic_name: "ವಿಷಯದ ಹೆಸರು", enable_device: "ಈ ಸಾಧನದಲ್ಲಿ ಸಕ್ರಿಯಗೊಳಿಸಿ", save_sync: "ಉಳಿಸಿ ಮತ್ತು ಸಿಂಕ್ ಮಾಡಿ" },
+      common: { language: "ಭಾಷೆ" }
+    }
+  },
+  ml: {
+    translation: {
+      login: { title: "ഓപ്പൺ ക്യാഷ്ബുക്ക് ലോഗിൻ", phone: "ഫോൺ നമ്പർ", pin: "പിൻ", login_btn: "ലോഗിൻ", pick_contact: "കോൺടാക്റ്റ് തിരഞ്ഞെടുക്കുക", invalid_creds: "അസാധുവായ വിവരങ്ങൾ", enter_details: "ഫോൺ നമ്പറും പിന്നും നൽകുക", select_branch: "ബ്രാഞ്ച് തിരഞ്ഞെടുക്കുക" },
+      nav: { dashboard: "ഡാഷ്‌ബോർഡ്", reports: "റിപ്പോർട്ടുകൾ", parties: "പാർട്ടികൾ", settings: "ക്രമീകരണങ്ങൾ", logout: "ലോഗൗട്ട്" },
+      dashboard: { net_balance: "ആകെ ബാലൻസ്", cash_in: "ലഭിച്ച തുക", cash_out: "ചിലവായ തുക", recent_transactions: "അടുത്ത കാലത്തെ ഇടപാടുകൾ", add_transaction: "ഇടപാട് ചേർക്കുക", no_transactions: "ഇടപാടുകൾ ഒന്നുമില്ല" },
+      transaction: { type: "ഇനം", income: "വരുമാനം", expense: "ചിലവ്", amount: "തുക", category: "വിഭാഗം", party_name: "പാർട്ടിയുടെ പേര്", phone: "ഫോൺ", payment_mode: "പേയ്‌മെന്റ് രീതി", reference: "റഫറൻസ് നമ്പർ", remarks: "കുറിപ്പുകൾ", receipt: "രസീത്", recurring: "ആവർത്തിക്കുന്നത്", save: "സൂക്ഷിക്കുക", edit: "തിരുത്തുക", delete: "നീക്കം ചെയ്യുക", none: "ഒന്നുമില്ല", daily: "ദൈനംദിനം", weekly: "പ്രതിവാരം", monthly: "പ്രതിമാസം" },
+      parties: { customer_dashboard: "ഉപഭോക്തൃ ഡാഷ്‌ബോർഡ്", search: "പേരോ ഫോൺ നമ്പരോ തിരയുക...", you_will_give: "നിങ്ങൾ നൽകേണ്ടത്", you_will_get: "നിങ്ങൾക്ക് ലഭിക്കേണ്ടത്", net_received: "ആകെ ലഭിച്ചത്", net_paid: "ആകെ നൽകിയത്", no_parties: "പാർട്ടികളൊന്നും കണ്ടെത്തിയില്ല" },
+      reports: { reports_title: "റിപ്പോർട്ടുകൾ", download_pdf: "PDF ഡൗൺലോഡ് ചെയ്യുക", filter_all: "എല്ലാ സമയവും", filter_today: "ഇന്ന്", filter_month: "ഈ മാസം", filter_custom: "കസ്റ്റം", from: "മുതൽ", to: "വരെ", apply: "പ്രയോഗിക്കുക", net_profit: "അറ്റാദായം", whatsapp_reminder: "WhatsApp ഓർമ്മപ്പെടുത്തൽ" },
+      settings: { title: "ബിസിനസ്സ് ക്രമീകരണങ്ങൾ", appearance: "രൂപമാതൃക", auto: "ഓട്ടോ", light: "ലൈറ്റ് മോഡ്", dark: "ഡാർക്ക് മോഡ്", brand_info: "ബ്രാൻഡ് വിവരങ്ങൾ", brand_name: "ബ്രാൻഡിന്റെ പേര്", tagline: "ടാഗ്‌ലൈൻ", address: "മേൽവിലാസം", business_phone: "ബിസിനസ്സ് ഫോൺ", email: "ഇമെയിൽ", website: "വെബ്‌സൈറ്റ്", social_media: "സോഷ്യൽ മീഡിയ", upi_id: "ബിസിനസ്സ് UPI ID", logo: "ലോഗോ", date_format: "തീയതി ശൈലി", opening_balance: "തുടക്ക ബാലൻസ്", session_timeout: "സെഷൻ കാലാവധി", digital_card: "ഡിജിറ്റൽ ബിസിനസ്സ് കാർഡ്", share_card: "കാർഡ് പങ്കിടുക", admin_security: "അഡ്മിൻ സുരക്ഷ", admin_phone: "അഡ്മിൻ ഫോൺ", admin_pin: "അഡ്മിൻ പിൻ", manage_staff: "സ്റ്റാഫ് മാനേജ്മെന്റ്", name: "പേര്", manage_categories: "വിഭാഗങ്ങൾ നിയന്ത്രിക്കുക", category_name: "വിഭാഗത്തിന്റെ പേര്", data_management: "ഡാറ്റ മാനേജ്മെന്റ്", export_db: "ബാക്കപ്പ് എക്‌സ്‌പോർട്ട്", import_db: "ബാക്കപ്പ് ഇമ്പോർട്ട്", push_notifications: "പുഷ് നോട്ടിഫിക്കേഷനുകൾ", topic_name: "വിഷയം", enable_device: "ഈ ഉപകരണത്തിൽ സജ്ജമാക്കുക", save_sync: "സേവ് ചെയ്ത് സിങ്ക് ചെയ്യുക" },
+      common: { language: "ഭാഷ" }
+    }
+  },
+  pa: {
+    translation: {
+      login: { title: "ਓਪਨ ਕੈਸ਼ਬੁੱਕ ਲੌਗਇਨ", phone: "ਫੋਨ ਨੰਬਰ", pin: "ਪਿੰਨ (PIN)", login_btn: "ਲੌਗਇਨ ਕਰੋ", pick_contact: "ਸੰਪਰਕ ਚੁਣੋ", invalid_creds: "ਗਲਤ ਵੇਰਵੇ", enter_details: "ਫੋਨ ਅਤੇ ਪਿੰਨ ਭਰੋ", select_branch: "ਬ੍ਰਾਂਚ ਚੁਣੋ" },
+      nav: { dashboard: "ਡੈਸ਼ਬੋਰਡ", reports: "ਰਿਪੋਰਟਾਂ", parties: "ਪਾਰਟੀਆਂ", settings: "ਸੈਟਿੰਗਾਂ", logout: "ਲੌਗ ਆਊਟ" },
+      dashboard: { net_balance: "ਕੁੱਲ ਬੈਲੰਸ", cash_in: "ਪੈਸੇ ਆਏ", cash_out: "ਪੈਸੇ ਗਏ", recent_transactions: "ਹਾਲੀਆ ਲੈਣ-ਦੇਣ", add_transaction: "ਲੈਣ-ਦੇਣ ਜੋੜੋ", no_transactions: "ਕੋਈ ਲੈਣ-ਦੇਣ ਨਹੀਂ" },
+      transaction: { type: "ਕਿਸਮ", income: "ਆਮਦਨ", expense: "ਖਰਚਾ", amount: "ਰਕਮ", category: "ਸ਼੍ਰੇਣੀ", party_name: "ਪਾਰਟੀ ਦਾ ਨਾਮ", phone: "ਫੋਨ", payment_mode: "ਭੁਗਤਾਨ ਦਾ ਤਰੀਕਾ", reference: "ਹਵਾਲਾ ਨੰਬਰ", remarks: "ਟਿੱਪਣੀ", receipt: "ਰਸੀਦ ਦੀ ਫੋਟੋ", recurring: "ਆਵਰਤੀ", save: "ਸੇਵ ਕਰੋ", edit: "ਸੋਧੋ", delete: "ਮਿਟਾਓ", none: "ਕੋਈ ਨਹੀਂ", daily: "ਰੋਜ਼ਾਨਾ", weekly: "ਹਫ਼ਤਾਵਾਰੀ", monthly: "ਮਹੀਨਾਵਾਰ" },
+      parties: { customer_dashboard: "ਗਾਹਕ ਡੈਸ਼ਬੋਰਡ", search: "ਨਾਮ ਜਾਂ ਫੋਨ ਲੱਭੋ...", you_will_give: "ਤੁਸੀਂ ਦੇਣੇ ਹਨ", you_will_get: "ਤੁਹਾਨੂੰ ਮਿਲਣਗੇ", net_received: "ਕੁੱਲ ਪ੍ਰਾਪਤ", net_paid: "ਕੁੱਲ ਭੁਗਤਾਨ", no_parties: "ਕੋਈ ਪਾਰਟੀ ਨਹੀਂ ਲੱਭੀ" },
+      reports: { reports_title: "ਰਿਪੋਰਟਾਂ", download_pdf: "PDF ਡਾਊਨਲੋਡ ਕਰੋ", filter_all: "ਸਾਰੇ", filter_today: "ਅੱਜ", filter_month: "ਇਸ ਮਹੀਨੇ", filter_custom: "ਕਸਟਮ", from: "ਤੋਂ", to: "ਤੱਕ", apply: "ਲਾਗੂ ਕਰੋ", net_profit: "ਸ਼ੁੱਧ ਮੁਨਾਫ਼ਾ", whatsapp_reminder: "WhatsApp ਰਿਮਾਈਂਡਰ" },
+      settings: { title: "ਵਪਾਰ ਸੈਟਿੰਗਾਂ", appearance: "ਦਿੱਖ", auto: "ਆਟੋ", light: "ਲਾਈਟ ਮੋਡ", dark: "ਡਾਰਕ ਮੋਡ", brand_info: "ਬ੍ਰਾਂਡ ਜਾਣਕਾਰੀ", brand_name: "ਬ੍ਰਾਂਡ ਦਾ ਨਾਮ", tagline: "ਟੈਗਲਾਈਨ", address: "ਪਤਾ", business_phone: "ਵਪਾਰ ਫੋਨ", email: "ਈਮੇਲ", website: "ਵੈੱਬਸਾਈਟ", social_media: "ਸੋਸ਼ਲ ਮੀਡੀਆ", upi_id: "ਵਪਾਰ UPI ID", logo: "ਲੋਗੋ", date_format: "ਮਿਤੀ ਫਾਰਮੈਟ", opening_balance: "ਸ਼ੁਰੂਆਤੀ ਬੈਲੰਸ", session_timeout: "ਸੈਸ਼ਨ ਸਮਾਂ ਸਮਾਪਤ", digital_card: "ਡਿਜੀਟਲ ਬਿਜ਼ਨਸ ਕਾਰਡ", share_card: "ਕਾਰਡ ਸਾਂਝਾ ਕਰੋ", admin_security: "ਐਡਮਿਨ ਸੁਰੱਖਿਆ", admin_phone: "ਐਡਮਿਨ ਫੋਨ", admin_pin: "ਐਡਮਿਨ ਪਿੰਨ", manage_staff: "ਸਟਾਫ ਪ੍ਰਬੰਧਨ", name: "ਨਾਮ", manage_categories: "ਸ਼੍ਰੇണੀਆਂ ਦਾ ਪ੍ਰਬੰਧਨ", category_name: "ਸ਼੍ਰੇਣੀ ਦਾ ਨਾਮ", data_management: "ਡਾਟਾ ਪ੍ਰਬੰਧਨ", export_db: "ਬੈਕਅੱਪ ਐਕਸਪੋਰਟ", import_db: "ਬੈਕਅੱਪ ਇੰਪੋਰਟ", push_notifications: "ਪੁਸ਼ ਸੂਚਨਾਵਾਂ", topic_name: "ਵਿਸ਼ੇ ਦਾ ਨਾਮ", enable_device: "ਇਸ ਡਿਵਾਈਸ 'ਤੇ ਚાલુ ਕਰੋ", save_sync: "ਸੇਵ ਅਤੇ ਸਿੰਕ ਕਰੋ" },
+      common: { language: "ਭਾਸ਼ਾ" }
+    }
+  },
   zh: {
     translation: {
-      login: { title: "现金簿登录", phone: "电话号码", pin: "密码 (PIN)", login_btn: "登录", pick_contact: "选择联系人", invalid_creds: "无效的凭据", enter_details: "输入电话和密码", select_branch: "选择分店" },
+      login: { title: "开放现金簿登录", phone: "电话号码", pin: "密码 (PIN)", login_btn: "登录", pick_contact: "选择联系人", invalid_creds: "无效的凭据", enter_details: "输入电话和密码", select_branch: "选择分店" },
       nav: { dashboard: "仪表板", reports: "报表", parties: "客户/供应商", settings: "设置", logout: "登出" },
       dashboard: { net_balance: "净余额", cash_in: "收入", cash_out: "支出", recent_transactions: "最近交易", add_transaction: "添加交易", no_transactions: "暂无交易" },
       transaction: { type: "类型", income: "收入", expense: "支出", amount: "金额", category: "分类", party_name: "名称 (可选)", phone: "电话 (可选)", payment_mode: "支付方式", reference: "参考号", remarks: "备注", receipt: "收据图片", recurring: "周期性", save: "保存", edit: "编辑", delete: "删除", none: "无", daily: "每日", weekly: "每周", monthly: "每月" },
@@ -107,9 +131,45 @@ export const resources = {
       common: { language: "语言" }
     }
   },
+  ja: {
+    translation: {
+      login: { title: "オープンキャッシュブック ログイン", phone: "電話番号", pin: "暗証番号 (PIN)", login_btn: "ログイン", pick_contact: "連絡先を選択", invalid_creds: "認証情報が無効です", enter_details: "電話番号とPINを入力", select_branch: "支店を選択" },
+      nav: { dashboard: "ダッシュボード", reports: "レポート", parties: "取引先", settings: "設定", logout: "ログアウト" },
+      dashboard: { net_balance: "純資産残高", cash_in: "収入", cash_out: "支出", recent_transactions: "最近の取引", add_transaction: "取引を追加", no_transactions: "取引はまだありません" },
+      transaction: { type: "種類", income: "収入", expense: "支出", amount: "金額", category: "カテゴリ", party_name: "取引先名 (任意)", phone: "電話番号 (任意)", payment_mode: "支払方法", reference: "参照番号", remarks: "備考", receipt: "レシート画像", recurring: "繰り返し", save: "保存する", edit: "編集する", delete: "削除する", none: "なし", daily: "毎日", weekly: "毎週", monthly: "毎月" },
+      parties: { customer_dashboard: "顧客ダッシュボード", search: "名前や電話番号で検索...", you_will_give: "支払う予定", you_will_get: "受け取る予定", net_received: "受取総額", net_paid: "支払総額", no_parties: "取引先が見つかりません" },
+      reports: { reports_title: "レポート", download_pdf: "PDFをダウンロード", filter_all: "全期間", filter_today: "今日", filter_month: "今月", filter_custom: "指定期間", from: "開始日", to: "終了日", apply: "適用する", net_profit: "純利益", whatsapp_reminder: "WhatsApp通知を送る" },
+      settings: { title: "ビジネス設定", appearance: "表示テーマ", auto: "自動 (システム)", light: "ライトモード", dark: "ダークモード", brand_info: "ブランド情報", brand_name: "ブランド名", tagline: "タグライン", address: "住所", business_phone: "ビジネス電話番号", email: "メールアドレス", website: "ウェブサイト", social_media: "ソーシャルメディア", upi_id: "ビジネスUPI ID", logo: "会社ロゴ", date_format: "PDF日付フォーマット", opening_balance: "期首残高", session_timeout: "セッションタイムアウト", digital_card: "デジタル名刺", share_card: "名刺をシェア", admin_security: "管理者セキュリティ", admin_phone: "管理者電話番号", admin_pin: "管理者PIN", manage_staff: "スタッフ管理", name: "名前", manage_categories: "カテゴリ管理", category_name: "カテゴリ名", data_management: "データ管理", export_db: "バックアップを書き出し", import_db: "バックアップを読み込み", push_notifications: "プッシュ通知", topic_name: "トピック名", enable_device: "この端末で有効にする", save_sync: "保存＆同期" },
+      common: { language: "言語 (Language)" }
+    }
+  },
+  de: {
+    translation: {
+      login: { title: "Open Cashbook Login", phone: "Telefonnummer", pin: "PIN", login_btn: "Anmelden", pick_contact: "Kontakt auswählen", invalid_creds: "Ungültige Anmeldedaten", enter_details: "Telefon und PIN eingeben", select_branch: "Filiale auswählen" },
+      nav: { dashboard: "Dashboard", reports: "Berichte", parties: "Kontakte", settings: "Einstellungen", logout: "Abmelden" },
+      dashboard: { net_balance: "Nettosaldo", cash_in: "Einnahmen", cash_out: "Ausgaben", recent_transactions: "Aktuelle Transaktionen", add_transaction: "Transaktion hinzufügen", no_transactions: "Noch keine Transaktionen" },
+      transaction: { type: "Typ", income: "Einnahme", expense: "Ausgabe", amount: "Betrag", category: "Kategorie", party_name: "Partnername (Optional)", phone: "Telefon (Optional)", payment_mode: "Zahlungsmethode", reference: "Referenz-Nr.", remarks: "Anmerkungen", receipt: "Belegbild", recurring: "Wiederkehrend", save: "Eintrag speichern", edit: "Eintrag bearbeiten", delete: "Löschen", none: "Keine", daily: "Täglich", weekly: "Wöchentlich", monthly: "Monatlich" },
+      parties: { customer_dashboard: "Kunden-Dashboard", search: "Name oder Telefon suchen...", you_will_give: "Sie zahlen", you_will_get: "Sie erhalten", net_received: "Gesamt erhalten", net_paid: "Gesamt bezahlt", no_parties: "Keine Kontakte gefunden" },
+      reports: { reports_title: "Berichte", download_pdf: "PDF herunterladen", filter_all: "Gesamtzeit", filter_today: "Heute", filter_month: "Diesen Monat", filter_custom: "Benutzerdefiniert", from: "Von", to: "Bis", apply: "Anwenden", net_profit: "Nettogewinn", whatsapp_reminder: "WhatsApp-Erinnerung senden" },
+      settings: { title: "Geschäftseinstellungen", appearance: "Erscheinungsbild", auto: "Auto (System)", light: "Hell", dark: "Dunkel", brand_info: "Markeninformationen", brand_name: "Markenname", tagline: "Slogan", address: "Adresse", business_phone: "Geschäfts-Telefon", email: "E-Mail", website: "Webseite", social_media: "Social Media", upi_id: "Geschäfts-UPI ID", logo: "Firmenlogo", date_format: "PDF-Datumsformat", opening_balance: "Anfangssaldo", session_timeout: "Sitzungsthermit", digital_card: "Digitale Visitenkarte", share_card: "Karte teilen", admin_security: "Administrator-Sicherheit", admin_phone: "Admin-Telefon", admin_pin: "Admin-PIN", manage_staff: "Personal verwalten", name: "Name", manage_categories: "Kategorien verwalten", category_name: "Kategoriename", data_management: "Datenverwaltung", export_db: "Backup exportieren", import_db: "Backup importieren", push_notifications: "Push-Benachrichtigungen", topic_name: "Themenname", enable_device: "Auf diesem Gerät aktivieren", save_sync: "Speichern & Synchronisieren" },
+      common: { language: "Sprache" }
+    }
+  },
+  fr: {
+    translation: {
+      login: { title: "Connexion Open Cashbook", phone: "Numéro de téléphone", pin: "Code PIN", login_btn: "Se connecter", pick_contact: "Choisir un contact", invalid_creds: "Identifiants invalides", enter_details: "Entrez le téléphone et le PIN", select_branch: "Choisir la succursale" },
+      nav: { dashboard: "Tableau de bord", reports: "Rapports", parties: "Clients", settings: "Paramètres", logout: "Déconnexion" },
+      dashboard: { net_balance: "Solde Net", cash_in: "Entrées", cash_out: "Sorties", recent_transactions: "Transactions récentes", add_transaction: "Ajouter une transaction", no_transactions: "Aucune transaction" },
+      transaction: { type: "Type", income: "Revenu", expense: "Dépense", amount: "Montant", category: "Catégorie", party_name: "Nom du client", phone: "Téléphone", payment_mode: "Mode de paiement", reference: "Référence", remarks: "Remarques", receipt: "Reçu", recurring: "Récurrent", save: "Enregistrer", edit: "Modifier", delete: "Supprimer", none: "Aucun", daily: "Quotidien", weekly: "Hebdomadaire", monthly: "Mensuel" },
+      parties: { customer_dashboard: "Tableau des clients", search: "Rechercher...", you_will_give: "Vous donnerez", you_will_get: "Vous recevrez", net_received: "Total Reçu", net_paid: "Total Payé", no_parties: "Aucun client trouvé" },
+      reports: { reports_title: "Rapports", download_pdf: "Télécharger PDF", filter_all: "Tout", filter_today: "Aujourd'hui", filter_month: "Ce mois", filter_custom: "Personnalisé", from: "De", to: "À", apply: "Appliquer", net_profit: "Bénéfice Net", whatsapp_reminder: "Envoyer un rappel WhatsApp" },
+      settings: { title: "Paramètres de l'entreprise", appearance: "Apparence", auto: "Auto", light: "Mode Clair", dark: "Mode Sombre", brand_info: "Infos de la marque", brand_name: "Nom de la marque", tagline: "Slogan", address: "Adresse", business_phone: "Téléphone Pro", email: "Email", website: "Site Web", social_media: "Réseaux Sociaux", upi_id: "UPI ID", logo: "Logo", date_format: "Format de date", opening_balance: "Solde d'ouverture", session_timeout: "Expiration de session", digital_card: "Carte de visite numérique", share_card: "Partager la carte", admin_security: "Sécurité Admin", admin_phone: "Téléphone Admin", admin_pin: "PIN Admin", manage_staff: "Gestion du personnel", name: "Nom", manage_categories: "Gestion des catégories", category_name: "Nom de la catégorie", data_management: "Gestion des données", export_db: "Exporter la sauvegarde", import_db: "Importer la sauvegarde", push_notifications: "Notifications Push", topic_name: "Nom du sujet", enable_device: "Activer sur cet appareil", save_sync: "Enregistrer et synchroniser" },
+      common: { language: "Langue" }
+    }
+  },
   es: {
     translation: {
-      login: { title: "Iniciar Sesión", phone: "Número de teléfono", pin: "PIN", login_btn: "Entrar", pick_contact: "Elegir contacto", invalid_creds: "Credenciales inválidas", enter_details: "Ingrese teléfono y PIN", select_branch: "Seleccionar sucursal" },
+      login: { title: "Iniciar Sesión en Open Cashbook", phone: "Número de teléfono", pin: "PIN", login_btn: "Entrar", pick_contact: "Elegir contacto", invalid_creds: "Credenciales inválidas", enter_details: "Ingrese teléfono y PIN", select_branch: "Seleccionar sucursal" },
       nav: { dashboard: "Inicio", reports: "Reportes", parties: "Clientes", settings: "Ajustes", logout: "Salir" },
       dashboard: { net_balance: "Balance Neto", cash_in: "Entradas", cash_out: "Salidas", recent_transactions: "Transacciones Recientes", add_transaction: "Nueva Transacción", no_transactions: "No hay transacciones" },
       transaction: { type: "Tipo", income: "Ingreso", expense: "Gasto", amount: "Monto", category: "Categoría", party_name: "Nombre del Cliente", phone: "Teléfono", payment_mode: "Método de Pago", reference: "Referencia", remarks: "Notas", receipt: "Recibo", recurring: "Recurrente", save: "Guardar", edit: "Editar", delete: "Eliminar", none: "Ninguno", daily: "Diario", weekly: "Semanal", monthly: "Mensual" },
@@ -121,7 +181,7 @@ export const resources = {
   },
   ar: {
     translation: {
-      login: { title: "تسجيل الدخول", phone: "رقم الهاتف", pin: "الرمز السري", login_btn: "دخول", pick_contact: "اختر جهة اتصال", invalid_creds: "بيانات غير صالحة", enter_details: "أدخل الهاتف والرمز", select_branch: "اختر الفرع" },
+      login: { title: "تسجيل الدخول إلى الدفتر النقدية المفتوح", phone: "رقم الهاتف", pin: "الرمز السري", login_btn: "دخول", pick_contact: "اختر جهة اتصال", invalid_creds: "بيانات غير صالحة", enter_details: "أدخل الهاتف والرمز", select_branch: "اختر الفرع" },
       nav: { dashboard: "لوحة القيادة", reports: "التقارير", parties: "العملاء", settings: "الإعدادات", logout: "خروج" },
       dashboard: { net_balance: "الرصيد الصافي", cash_in: "مقبوضات", cash_out: "مدفوعات", recent_transactions: "المعاملات الأخيرة", add_transaction: "إضافة معاملة", no_transactions: "لا توجد معاملات" },
       transaction: { type: "النوع", income: "دخل", expense: "مصروف", amount: "المبلغ", category: "الفئة", party_name: "اسم العميل", phone: "الهاتف", payment_mode: "طريقة الدفع", reference: "رقم المرجع", remarks: "ملاحظات", receipt: "صورة الإيصال", recurring: "متكرر", save: "حفظ", edit: "تعديل", delete: "حذف", none: "بدون", daily: "يومي", weekly: "أسبوعي", monthly: "شهري" },
@@ -131,16 +191,100 @@ export const resources = {
       common: { language: "لغة (Language)" }
     }
   },
-  fr: {
+  pt: {
     translation: {
-      login: { title: "Connexion CashBook", phone: "Numéro de téléphone", pin: "Code PIN", login_btn: "Se connecter", pick_contact: "Choisir un contact", invalid_creds: "Identifiants invalides", enter_details: "Entrez le téléphone et le PIN", select_branch: "Choisir la succursale" },
-      nav: { dashboard: "Tableau de bord", reports: "Rapports", parties: "Clients", settings: "Paramètres", logout: "Déconnexion" },
-      dashboard: { net_balance: "Solde Net", cash_in: "Entrées", cash_out: "Sorties", recent_transactions: "Transactions récentes", add_transaction: "Ajouter une transaction", no_transactions: "Aucune transaction" },
-      transaction: { type: "Type", income: "Revenu", expense: "Dépense", amount: "Montant", category: "Catégorie", party_name: "Nom du client", phone: "Téléphone", payment_mode: "Mode de paiement", reference: "Référence", remarks: "Remarques", receipt: "Reçu", recurring: "Récurrent", save: "Enregistrer", edit: "Modifier", delete: "Supprimer", none: "Aucun", daily: "Quotidien", weekly: "Hebdomadaire", monthly: "Mensuel" },
-      parties: { customer_dashboard: "Tableau des clients", search: "Rechercher...", you_will_give: "Vous donnerez", you_will_get: "Vous recevrez", net_received: "Total Reçu", net_paid: "Total Payé", no_parties: "Aucun client trouvé" },
-      reports: { reports_title: "Rapports", download_pdf: "Télécharger PDF", filter_all: "Tout", filter_today: "Aujourd'hui", filter_month: "Ce mois", filter_custom: "Personnalisé", from: "De", to: "À", apply: "Appliquer", net_profit: "Bénéfice Net", whatsapp_reminder: "Envoyer un rappel WhatsApp" },
-      settings: { title: "Paramètres de l'entreprise", appearance: "Apparence", auto: "Auto", light: "Mode Clair", dark: "Mode Sombre", brand_info: "Infos de la marque", brand_name: "Nom de la marque", tagline: "Slogan", address: "Adresse", business_phone: "Téléphone Pro", email: "Email", website: "Site Web", social_media: "Réseaux Sociaux", upi_id: "UPI ID", logo: "Logo", date_format: "Format de date", opening_balance: "Solde d'ouverture", session_timeout: "Expiration de session", digital_card: "Carte de visite numérique", share_card: "Partager la carte", admin_security: "Sécurité Admin", admin_phone: "Téléphone Admin", admin_pin: "PIN Admin", manage_staff: "Gestion du personnel", name: "Nom", manage_categories: "Gestion des catégories", category_name: "Nom de la catégorie", data_management: "Gestion des données", export_db: "Exporter la sauvegarde", import_db: "Importer la sauvegarde", push_notifications: "Notifications Push", topic_name: "Nom du sujet", enable_device: "Activer sur cet appareil", save_sync: "Enregistrer et synchroniser" },
-      common: { language: "Langue" }
+      login: { title: "Login Open Cashbook", phone: "Número de Telefone", pin: "PIN", login_btn: "Entrar", pick_contact: "Escolher Contato", invalid_creds: "Credenciais inválidas", enter_details: "Digite o telefone e PIN", select_branch: "Selecionar Filial" },
+      nav: { dashboard: "Painel", reports: "Relatórios", parties: "Contatos", settings: "Configurações", logout: "Sair" },
+      dashboard: { net_balance: "Saldo Líquido", cash_in: "Entradas", cash_out: "Saídas", recent_transactions: "Transações Recentes", add_transaction: "Adicionar Transação", no_transactions: "Sem transações" },
+      transaction: { type: "Tipo", income: "Receita", expense: "Despesa", amount: "Valor", category: "Categoria", party_name: "Nome do Contato", phone: "Telefone", payment_mode: "Forma de Pagamento", reference: "Referência", remarks: "Observações", receipt: "Recibo", recurring: "Recorrente", save: "Salvar", edit: "Editar", delete: "Excluir", none: "Nenhum", daily: "Diário", weekly: "Semanal", monthly: "Mensal" },
+      parties: { customer_dashboard: "Painel de Clientes", search: "Buscar nome ou telefone...", you_will_give: "Você pagará", you_will_get: "Você receberá", net_received: "Total Recebido", net_paid: "Total Pago", no_parties: "Nenhum contato encontrado" },
+      reports: { reports_title: "Relatórios", download_pdf: "Baixar PDF", filter_all: "Todo período", filter_today: "Hoje", filter_month: "Este Mês", filter_custom: "Personalizado", from: "De", to: "Até", apply: "Aplicar", net_profit: "Lucro Líquido", whatsapp_reminder: "Lembrete via WhatsApp" },
+      settings: { title: "Configurações do Negócio", appearance: "Aparência", auto: "Automático", light: "Modo Claro", dark: "Modo Escuro", brand_info: "Informações da Marca", brand_name: "Nome da Marca", tagline: "Slogan", address: "Endereço", business_phone: "Telefone Comercial", email: "E-mail", website: "Site", social_media: "Redes Sociais", upi_id: "Chave UPI / PIX", logo: "Logotipo", date_format: "Formato de Data", opening_balance: "Saldo Inicial", session_timeout: "Tempo Limite da Sessão", digital_card: "Cartão de Visita Digital", share_card: "Compartilhar Cartão", admin_security: "Segurança do Admin", admin_phone: "Telefone Admin", admin_pin: "PIN Admin", manage_staff: "Gerenciar Equipe", name: "Nome", manage_categories: "Gerenciar Categorias", category_name: "Nome da Categoria", data_management: "Gerenciar Dados", export_db: "Exportar Backup", import_db: "Importar Backup", push_notifications: "Notificações Push", topic_name: "Tópico", enable_device: "Ativar neste dispositivo", save_sync: "Salvar & Sincronizar" },
+      common: { language: "Idioma" }
+    }
+  },
+  ru: {
+    translation: {
+      login: { title: "Вход в Open Cashbook", phone: "Номер телефона", pin: "ПИН-код", login_btn: "Войти", pick_contact: "Выбрать контакт", invalid_creds: "Неверные данные", enter_details: "Введите телефон и ПИН", select_branch: "Выберите филиал" },
+      nav: { dashboard: "Главная", reports: "Отчеты", parties: "Клиенты", settings: "Настройки", logout: "Выход" },
+      dashboard: { net_balance: "Чистый баланс", cash_in: "Приход", cash_out: "Расход", recent_transactions: "Последние операции", add_transaction: "Добавить операцию", no_transactions: "Операций пока нет" },
+      transaction: { type: "Тип", income: "Доход", expense: "Расход", amount: "Сумма", category: "Категория", party_name: "Контрагент", phone: "Телефон", payment_mode: "Способ оплаты", reference: "Ссылка/№", remarks: "Примечания", receipt: "Чек/Квитанция", recurring: "Повторение", save: "Сохранить", edit: "Изменить", delete: "Удалить", none: "Нет", daily: "Ежедневно", weekly: "Еженедельно", monthly: "Ежемесячно" },
+      parties: { customer_dashboard: "Панель клиентов", search: "Поиск имени или телефона...", you_will_give: "Вы должны", you_will_get: "Вам должны", net_received: "Всего получено", net_paid: "Всего оплачено", no_parties: "Клиенты не найдены" },
+      reports: { reports_title: "Отчеты", download_pdf: "Скачать PDF", filter_all: "За все время", filter_today: "Сегодня", filter_month: "Этот месяц", filter_custom: "Период", from: "С", to: "По", apply: "Применить", net_profit: "Чистая прибыль", whatsapp_reminder: "Напомнить в WhatsApp" },
+      settings: { title: "Настройки бизнеса", appearance: "Оформление", auto: "Авто", light: "Светлая тема", dark: "Темная тема", brand_info: "Данные компании", brand_name: "Название бренда", tagline: "Слоган", address: "Адрес", business_phone: "Рабочий телефон", email: "Эл. почта", website: "Сайт", social_media: "Соцсети", upi_id: "Реквизиты/UPI ID", logo: "Логотип", date_format: "Формат даты PDF", opening_balance: "Начальный баланс", session_timeout: "Таймаут сессии", digital_card: "Цифровая визитка", share_card: "Поделиться визиткой", admin_security: "Безопасноть админа", admin_phone: "Телефон админа", admin_pin: "ПИН админа", manage_staff: "Управление сотрудниками", name: "Имя", manage_categories: "Управление категориями", category_name: "Название категории", data_management: "Управление данными", export_db: "Экспорт бэкапа", import_db: "Импорт бэкапа", push_notifications: "Push-уведомления", topic_name: "Тема", enable_device: "Включить на этом устройстве", save_sync: "Сохранить и синхронизовать" },
+      common: { language: "Язык (Language)" }
+    }
+  },
+  id: {
+    translation: {
+      login: { title: "Masuk Open Cashbook", phone: "Nomor Telepon", pin: "PIN", login_btn: "Masuk", pick_contact: "Pilih Kontak", invalid_creds: "Kredensial tidak valid", enter_details: "Masukkan telepon dan PIN", select_branch: "Pilih Cabang" },
+      nav: { dashboard: "Dasbor", reports: "Laporan", parties: "Kontak", settings: "Pengaturan", logout: "Keluar" },
+      dashboard: { net_balance: "Saldo Bersih", cash_in: "Uang Masuk", cash_out: "Uang Keluar", recent_transactions: "Transaksi Terkini", add_transaction: "Tambah Transaksi", no_transactions: "Belum ada transaksi" },
+      transaction: { type: "Tipe", income: "Pemasukan", expense: "Pengeluaran", amount: "Jumlah", category: "Kategori", party_name: "Nama Pihak", phone: "Telepon", payment_mode: "Metode Pembayaran", reference: "Nomor Referensi", remarks: "Catatan", receipt: "Foto Struk", recurring: "Berulang", save: "Simpan", edit: "Edit", delete: "Hapus", none: "Tidak Ada", daily: "Harian", weekly: "Mingguan", monthly: "Bulanan" },
+      parties: { customer_dashboard: "Dasbor Pelanggan", search: "Cari nama atau telepon...", you_will_give: "Anda akan bayar", you_will_get: "Anda akan terima", net_received: "Total Diterima", net_paid: "Total Dibayar", no_parties: "Kontak tidak ditemukan" },
+      reports: { reports_title: "Laporan", download_pdf: "Unduh PDF", filter_all: "Semua", filter_today: "Hari Ini", filter_month: "Bulan Ini", filter_custom: "Kustom", from: "Dari", to: "Sampai", apply: "Terapkan", net_profit: "Laba Bersih", whatsapp_reminder: "Pengingat WhatsApp" },
+      settings: { title: "Pengaturan Bisnis", appearance: "Tampilan", auto: "Otomatis", light: "Mode Terang", dark: "Mode Gelap", brand_info: "Informasi Merek", brand_name: "Nama Merek", tagline: "Slogan", address: "Alamat", business_phone: "Telepon Bisnis", email: "Email", website: "Situs Web", social_media: "Media Sosial", upi_id: "UPI ID Bisnis", logo: "Logo Perusahaan", date_format: "Format Tanggal", opening_balance: "Saldo Awal", session_timeout: "Waktu Habis Sesi", digital_card: "Kartu Nama Digital", share_card: "Bagikan Kartu", admin_security: "Keamanan Admin", admin_phone: "Telepon Admin", admin_pin: "PIN Admin", manage_staff: "Kelola Staf", name: "Nama", manage_categories: "Kelola Kategori", category_name: "Nama Kategori", data_management: "Manajemen Data", export_db: "Ekspor Cadangan", import_db: "Impor Cadangan", push_notifications: "Notifikasi Push", topic_name: "Nama Topik", enable_device: "Aktifkan di Perangakt Ini", save_sync: "Simpan & Sinkronkan" },
+      common: { language: "Bahasa" }
+    }
+  },
+  tr: {
+    translation: {
+      login: { title: "Open Cashbook Giriş", phone: "Telefon Numarası", pin: "PIN", login_btn: "Giriş Yap", pick_contact: "Kişi Seç", invalid_creds: "Geçersiz bilgiler", enter_details: "Telefon ve PIN girin", select_branch: "Şube Seçin" },
+      nav: { dashboard: "Kontrol Paneli", reports: "Raporlar", parties: "Kişiler", settings: "Ayarlar", logout: "Çıkış Yap" },
+      dashboard: { net_balance: "Net Bakiye", cash_in: "Gelen Para", cash_out: "Giden Para", recent_transactions: "Son İşlemler", add_transaction: "İşlem Ekle", no_transactions: "Henüz işlem yok" },
+      transaction: { type: "Tür", income: "Gelir", expense: "Gider", amount: "Tutar", category: "Kategori", party_name: "Kişi/Firma Adı", phone: "Telefon", payment_mode: "Ödeme Yöntemi", reference: "Referans No", remarks: "Notlar", receipt: "Fiş Görseli", recurring: "Tekrarlayan", save: "Kaydet", edit: "Düzenle", delete: "Sil", none: "Hiçbiri", daily: "Günlük", weekly: "Haftalık", monthly: "Aylık" },
+      parties: { customer_dashboard: "Müşteri Yönetimi", search: "İsim veya telefon ara...", you_will_give: "Ödeyeceksiniz", you_will_get: "Alacaksınız", net_received: "Toplam Alınan", net_paid: "Toplam Ödenen", no_parties: "Kayıt bulunamadı" },
+      reports: { reports_title: "Raporlar", download_pdf: "PDF İndir", filter_all: "Tüm Zamanlar", filter_today: "Bugün", filter_month: "Bu Ay", filter_custom: "Özel Tarih", from: "Başlangıç", to: "Bitiş", apply: "Uygula", net_profit: "Net Kar", whatsapp_reminder: "WhatsApp Hatırlatması Gönder" },
+      settings: { title: "İşletme Ayarları", appearance: "Görünüm", auto: "Otomatik", light: "Aydınlık Mod", dark: "Karanlık Mod", brand_info: "Marka Bilgileri", brand_name: "Marka Adı", tagline: "Slogan", address: "Adres", business_phone: "İş Telefonu", email: "E-posta", website: "Web Sitesi", social_media: "Sosyal Medya", upi_id: "Ödeme / IBAN Bilgisi", logo: "Şirket Logosu", date_format: "Tarih Formatı", opening_balance: "Açılış Bakiyesi", session_timeout: "Oturum Zaman Aşımı", digital_card: "dijital Kartvizit", share_card: "Kartı Paylaş", admin_security: "Yönetici Güvenliği", admin_phone: "Yönetici Telefonu", admin_pin: "Yönetici PIN", manage_staff: "Personel Yönetimi", name: "İsim", manage_categories: "Kategori Yönetimi", category_name: "Kategori Adı", data_management: "Veri Yönetimi", export_db: "Yedek Dışa Aktar", import_db: "Yedek İçe Aktar", push_notifications: "Anlık Bildirimler", topic_name: "Konu Adı", enable_device: "Bu Cihazda Etkinleştir", save_sync: "Kaydet ve Senkronize Et" },
+      common: { language: "Dil (Language)" }
+    }
+  },
+  it: {
+    translation: {
+      login: { title: "Accesso Open Cashbook", phone: "Numero di Telefono", pin: "PIN", login_btn: "Accedi", pick_contact: "Scegli Contatto", invalid_creds: "Credenziali non valide", enter_details: "Inserisci telefono e PIN", select_branch: "Seleziona Filiale" },
+      nav: { dashboard: "Bacheca", reports: "Report", parties: "Contatti", settings: "Impostazioni", logout: "Esci" },
+      dashboard: { net_balance: "Saldo Netto", cash_in: "Entrate", cash_out: "Uscite", recent_transactions: "Transazioni Recenti", add_transaction: "Nuova Transazione", no_transactions: "Nessuna transazione" },
+      transaction: { type: "Tipo", income: "Entrata", expense: "Uscita", amount: "Importo", category: "Categoria", party_name: "Nome Controparte", phone: "Telefono", payment_mode: "Metodo di Pagamento", reference: "N. Riferimento", remarks: "Note", receipt: "Foto Ricevuta", recurring: "Ricorrente", save: "Salva", edit: "Modifica", delete: "Elimina", none: "Nessuno", daily: "Giornaliero", weekly: "Settimanale", monthly: "Mensile" },
+      parties: { customer_dashboard: "Gestione Clienti", search: "Cerca nome o telefono...", you_will_give: "Darai", you_will_get: "Riceverai", net_received: "Totale Ricevuto", net_paid: "Totale Pagato", no_parties: "Nessun contatto trovato" },
+      reports: { reports_title: "Report", download_pdf: "Scarica PDF", filter_all: "Tutto", filter_today: "Oggi", filter_month: "Questo Mese", filter_custom: "Personalizzato", from: "Da", to: "A", apply: "Applica", net_profit: "Utile Netto", whatsapp_reminder: "Promemoria WhatsApp" },
+      settings: { title: "Impostazioni Aziendali", appearance: "Aspetto", auto: "Automatico", light: "Tema Chiaro", dark: "Tema Scuro", brand_info: "Informazioni Brand", brand_name: "Nome Azienda", tagline: "Slogan", address: "Indirizzo", business_phone: "Telefono Aziendale", email: "E-mail", website: "Sito Web", social_media: "Social Media", upi_id: "ID Pagamento / IBAN", logo: "Logo Azienda", date_format: "Formato Data", opening_balance: "Saldo Iniziale", session_timeout: "Timeout Sessione", digital_card: "Biglietto da Visita Digitale", share_card: "Condividi Biglietto", admin_security: "Sicurezza Admin", admin_phone: "Telefono Admin", admin_pin: "PIN Admin", manage_staff: "Gestione Personale", name: "Nome", manage_categories: "Gestione Categorie", category_name: "Nome Categoria", data_management: "Gestione Dati", export_db: "Esporta Backup", import_db: "Importa Backup", push_notifications: "Notifiche Push", topic_name: "Nome Topic", enable_device: "Abilita su questo dispositivo", save_sync: "Salva & Sincronizza" },
+      common: { language: "Lingua" }
+    }
+  },
+  vi: {
+    translation: {
+      login: { title: "Đăng nhập Open Cashbook", phone: "Số điện thoại", pin: "Mã PIN", login_btn: "Đăng nhập", pick_contact: "Chọn liên hệ", invalid_creds: "Thông tin không hợp lệ", enter_details: "Nhập SĐT và PIN", select_branch: "Chọn chi nhánh" },
+      nav: { dashboard: "Bảng điều khiển", reports: "Báo cáo", parties: "Khách hàng", settings: "Cài đặt", logout: "Đăng xuất" },
+      dashboard: { net_balance: "Số dư ròng", cash_in: "Tiền vào", cash_out: "Tiền ra", recent_transactions: "Giao dịch gần đây", add_transaction: "Thêm giao dịch", no_transactions: "Chưa có giao dịch" },
+      transaction: { type: "Loại", income: "Thu nhập", expense: "Chi phí", amount: "Số tiền", category: "Danh mục", party_name: "Tên đối tác", phone: "Điện thoại", payment_mode: "Hình thức thanh toán", reference: "Mã tham khảo", remarks: "Ghi chú", receipt: "Ảnh biên lai", recurring: "Định kỳ", save: "Lưu lại", edit: "Chính sửa", delete: "Xóa", none: "Không", daily: "Hàng ngày", weekly: "Hàng tuần", monthly: "Hàng tháng" },
+      parties: { customer_dashboard: "Quản lý khách hàng", search: "Tìm tên hoặc số điện thoại...", you_will_give: "Bạn sẽ trả", you_will_get: "Bạn sẽ nhận", net_received: "Tổng đã nhận", net_paid: "Tổng đã trả", no_parties: "Không tìm thấy" },
+      reports: { reports_title: "Báo cáo", download_pdf: "Tải PDF", filter_all: "Tất cả", filter_today: "Hôm nay", filter_month: "Tháng này", filter_custom: "Tùy chỉnh", from: "Từ", to: "Đến", apply: "Áp dụng", net_profit: "Lợi nhuận ròng", whatsapp_reminder: "Gửi nhắc nhở WhatsApp" },
+      settings: { title: "Cài đặt doanh nghiệp", appearance: "Giao diện", auto: "Tự động", light: "Chế độ sáng", dark: "Chế độ tối", brand_info: "Thông tin thương hiệu", brand_name: "Tên thương hiệu", tagline: "Khẩu hiệu", address: "Địa chỉ", business_phone: "SĐT kinh doanh", email: "Email", website: "Trang web", social_media: "Mạng xã hội", upi_id: "Tài khoản nhận tiền", logo: "Logo công ty", date_format: "Định dạng ngày", opening_balance: "Số dư ban đầu", session_timeout: "Hết hạn phiên", digital_card: "Danh thiếp điện tử", share_card: "Chia sẻ thẻ", admin_security: "Bảo mật quản trị", admin_phone: "SĐT Quản trị", admin_pin: "PIN Quản trị", manage_staff: "Quản lý nhân viên", name: "Họ tên", manage_categories: "Quản lý danh mục", category_name: "Tên danh mục", data_management: "Quản lý dữ liệu", export_db: "Xuất bản lưu", import_db: "Nhập bản lưu", push_notifications: "Thông báo đẩy", topic_name: "Chủ đề", enable_device: "Kích hoạt trên thiết bị này", save_sync: "Lưu & Đồng bộ" },
+      common: { language: "Ngôn ngữ (Language)" }
+    }
+  },
+  th: {
+    translation: {
+      login: { title: "เข้าสู่ระบบ Open Cashbook", phone: "เบอร์โทรศัพท์", pin: "รหัส PIN", login_btn: "เข้าสู่ระบบ", pick_contact: "เลือกผู้ติดต่อ", invalid_creds: "ข้อมูลไม่ถูกต้อง", enter_details: "กรอกเบอร์โทรและรหัส PIN", select_branch: "เลือกสาขา" },
+      nav: { dashboard: "หน้าหลัก", reports: "รายงาน", parties: "คู่ค้า/ลูกค้า", settings: "ตั้งค่า", logout: "ออกจากระบบ" },
+      dashboard: { net_balance: "ยอดคงเหลือสุทธิ", cash_in: "รายรับ", cash_out: "รายจ่าย", recent_transactions: "รายการล่าสุด", add_transaction: "เพิ่มรายการ", no_transactions: "ยังไม่มีรายการ" },
+      transaction: { type: "ประเภท", income: "รายรับ", expense: "รายจ่าย", amount: "จำนวนเงิน", category: "หมวดหมู่", party_name: "ชื่อคู่ค้า", phone: "เบอร์โทรศัพท์", payment_mode: "วิธีชำระเงิน", reference: "เลขอ้างอิง", remarks: "หมายเหตุ", receipt: "รูปใบเสร็จ", recurring: "ทำซ้ำ", save: "บันทึก", edit: "แก้ไข", delete: "ลบ", none: "ไม่มี", daily: "รายวัน", weekly: "รายสัปดาห์", monthly: "รายเดือน" },
+      parties: { customer_dashboard: "จัดการลูกค้า", search: "ค้นหาชื่อหรือเบอร์โทร...", you_will_give: "คุณต้องจ่าย", you_will_get: "คุณจะได้รับ", net_received: "รับแล้วทั้งหมด", net_paid: "จ่ายแล้วทั้งหมด", no_parties: "ไม่พบข้อมูล" },
+      reports: { reports_title: "รายงาน", download_pdf: "ดาวน์โหลด PDF", filter_all: "ทั้งหมด", filter_today: "วันนี้", filter_month: "เดือนนี้", filter_custom: "กำหนดเอง", from: "จาก", to: "ถึง", apply: "ตกลง", net_profit: "กำไรสุทธิ", whatsapp_reminder: "ส่งแจ้งเตือน WhatsApp" },
+      settings: { title: "การตั้งค่าธุรกิจ", appearance: "รูปแบบหน้าจอ", auto: "อัตโนมัติ", light: "โหมดสว่าง", dark: "โหมดมืด", brand_info: "ข้อมูลร้านค้า", brand_name: "ชื่อร้าน/แบรนด์", tagline: "สโลแกน", address: "ที่อยู่", business_phone: "เบอร์โทรติดต่อ", email: "อีเมล", website: "เว็บไซต์", social_media: "โซเชียลมีเดีย", upi_id: "ช่องทางรับเงิน (PromptPay/UPI)", logo: "โลโก้ร้าน", date_format: "รูปแบบวันที่", opening_balance: "ยอดยกมาเริ่มต้น", session_timeout: "หมดเวลาเชื่อมต่อ", digital_card: "นามบัตรดิจิทัล", share_card: "แชร์นามบัตร", admin_security: "ความปลอดภัยแอดมิน", admin_phone: "เบอร์แอดมิน", admin_pin: "รหัส PIN แอดมิน", manage_staff: "จัดการพนักงาน", name: "ชื่อ", manage_categories: "จัดการหมวดหมู่", category_name: "ชื่อหมวดหมู่", data_management: "จัดการข้อมูล", export_db: "ส่งออกสำรองข้อมูล", import_db: "นำเข้าข้อมูลสำรอง", push_notifications: "การแจ้งเตือน", topic_name: "หัวข้อ", enable_device: "เปิดใช้งานบนเครื่องนี้", save_sync: "บันทึก & ซิงค์" },
+      common: { language: "ภาษา (Language)" }
+    }
+  },
+  ko: {
+    translation: {
+      login: { title: "오픈 캐시북 로그인", phone: "전화번호", pin: "비밀번호 (PIN)", login_btn: "로그인", pick_contact: "연락처 선택", invalid_creds: "정보가 일치하지 않습니다", enter_details: "전화번호와 PIN을 입력하세요", select_branch: "지점 선택" },
+      nav: { dashboard: "대시보드", reports: "보고서", parties: "거래처", settings: "설정", logout: "로그아웃" },
+      dashboard: { net_balance: "순 잔액", cash_in: "수입", cash_out: "지출", recent_transactions: "최근 거래 내역", add_transaction: "거래 추가", no_transactions: "거래 내역이 없습니다" },
+      transaction: { type: "유형", income: "수입", expense: "지출", amount: "금액", category: "카테고리", party_name: "거래처명", phone: "전화번호", payment_mode: "결제 수단", reference: "참조 번호", remarks: "메모", receipt: "영수증 사진", recurring: "정기 거래", save: "내역 저장", edit: "내역 수정", delete: "삭제", none: "없음", daily: "매일", weekly: "매주", monthly: "매월" },
+      parties: { customer_dashboard: "거래처 관리", search: "이름 또는 전화번호 검색...", you_will_give: "지급 예정 (줄 돈)", you_will_get: "수금 예정 (받을 돈)", net_received: "총 수금액", net_paid: "총 지급액", no_parties: "거래처를 찾을 수 없습니다" },
+      reports: { reports_title: "보고서", download_pdf: "PDF 다운로드", filter_all: "전체 기간", filter_today: "오늘", filter_month: "이번 달", filter_custom: "기간 설정", from: "시작일", to: "종료일", apply: "적용", net_profit: "순이익", whatsapp_reminder: "WhatsApp 알림 보내기" },
+      settings: { title: "비즈니스 설정", appearance: "화면 모드", auto: "자동 (시스템)", light: "라이트 모드", dark: "다크 모드", brand_info: "브랜드 정보", brand_name: "상호명 / 브랜드", tagline: "슬로건", address: "주소", business_phone: "사업장 전화번호", email: "이메일", website: "웹사이트", social_media: "소셜 미디어", upi_id: "사업자 결제 ID / UPI", logo: "로고", date_format: "날짜 형식", opening_balance: "기초 잔액", session_timeout: "세션 만료 시간", digital_card: "디지털 명함", share_card: "명함 공유", admin_security: "관리자 보안", admin_phone: "관리자 전화번호", admin_pin: "관리자 PIN", manage_staff: "직원 관리", name: "이름", manage_categories: "카테고리 관리", category_name: "카테고리명", data_management: "데이터 관리", export_db: "백업 내보내기", import_db: "백업 불러오기", push_notifications: "푸시 알림", topic_name: "토픽명", enable_device: "이 기기에서 활성화", save_sync: "설정 저장 및 동기화" },
+      common: { language: "언어 (Language)" }
     }
   }
 };

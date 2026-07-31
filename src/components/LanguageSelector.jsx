@@ -9,10 +9,23 @@ const languages = [
   { code: 'mr', name: 'मराठी (Marathi)' },
   { code: 'ta', name: 'தமிழ் (Tamil)' },
   { code: 'gu', name: 'ગુજરાતી (Gujarati)' },
+  { code: 'kn', name: 'ಕನ್ನಡ (Kannada)' },
+  { code: 'ml', name: 'മലയാളം (Malayalam)' },
+  { code: 'pa', name: 'ਪੰਜਾਬੀ (Punjabi)' },
   { code: 'zh', name: '中文 (Chinese)' },
+  { code: 'ja', name: '日本語 (Japanese)' },
+  { code: 'de', name: 'Deutsch (German)' },
+  { code: 'fr', name: 'Français (French)' },
   { code: 'es', name: 'Español (Spanish)' },
   { code: 'ar', name: 'العربية (Arabic)' },
-  { code: 'fr', name: 'Français (French)' }
+  { code: 'pt', name: 'Português (Portuguese)' },
+  { code: 'ru', name: 'Русский (Russian)' },
+  { code: 'id', name: 'Bahasa Indonesia' },
+  { code: 'tr', name: 'Türkçe (Turkish)' },
+  { code: 'it', name: 'Italiano (Italian)' },
+  { code: 'vi', name: 'Tiếng Việt (Vietnamese)' },
+  { code: 'th', name: 'ไทย (Thai)' },
+  { code: 'ko', name: '한국어 (Korean)' }
 ];
 
 export default function LanguageSelector() {
