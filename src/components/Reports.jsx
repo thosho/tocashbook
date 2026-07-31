@@ -143,81 +143,79 @@ export default function Reports() {
     const now = new Date();
     return transactions.filter(t => {
       // Date Filter
-      const txDate = new Date(t.date + 'T00:00:00'); // force local timezone parse
+      if (!t.date) return false;
+      const txDate = new Date(String(t.date) + 'T00:00:00'); // force local timezone parse
       let dateMatch = true;
       if (dateFilter === 'daily') {
-        dateMatch = txDate.toDateString() === now.toDateString();
+        dateMatch = !isNaN(txDate.getTime()) && txDate.toDateString() === now.toDateString();
       } else if (dateFilter === 'weekly') {
         const startOfWeek = new Date(now);
         const day = now.getDay();
         startOfWeek.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
         startOfWeek.setHours(0, 0, 0, 0);
-        dateMatch = txDate >= startOfWeek && txDate <= now;
+        dateMatch = !isNaN(txDate.getTime()) && txDate >= startOfWeek && txDate <= now;
       } else if (dateFilter === 'monthly') {
-        dateMatch = txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+        dateMatch = !isNaN(txDate.getTime()) && txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
       } else if (dateFilter === 'yearly') {
-        dateMatch = txDate.getFullYear() === now.getFullYear();
+        dateMatch = !isNaN(txDate.getTime()) && txDate.getFullYear() === now.getFullYear();
       } else if (dateFilter === 'custom') {
-        // BUG-R4 FIX: if dates not set, show nothing rather than everything
         if (!customFrom || !customTo) return false;
-        dateMatch = t.date >= customFrom && t.date <= customTo;
+        dateMatch = String(t.date) >= String(customFrom) && String(t.date) <= String(customTo);
       }
-      // dateFilter === 'all': dateMatch stays true = show all
 
       // Category Filter
       let catMatch = true;
       if (categoryFilter !== 'all') {
-        catMatch = t.category === categoryFilter;
+        catMatch = String(t.category || '') === categoryFilter;
       }
 
       // Party Filter
       let partyMatch = true;
       if (partyFilter !== 'all') {
-        partyMatch = t.partyName === partyFilter;
+        partyMatch = String(t.partyName || '') === partyFilter;
       }
 
       // Staff Filter
       let staffMatch = true;
       if (staffFilter !== 'all') {
-        staffMatch = (t.user || '') === staffFilter;
+        staffMatch = String(t.user || '') === staffFilter;
       }
 
       // Payment Mode Filter
       let paymentMatch = true;
       if (paymentFilter !== 'all') {
-        paymentMatch = (t.paymentMode || 'Cash') === paymentFilter;
+        paymentMatch = String(t.paymentMode || 'Cash') === paymentFilter;
       }
 
       // UPI App Filter
       let upiAppMatch = true;
       if (paymentFilter === 'UPI' && upiAppFilter !== 'all') {
-        upiAppMatch = (t.upiApp || '') === upiAppFilter;
+        upiAppMatch = String(t.upiApp || '') === upiAppFilter;
       }
 
       return dateMatch && catMatch && partyMatch && staffMatch && paymentMatch && upiAppMatch;
     });
   }, [transactions, dateFilter, categoryFilter, partyFilter, staffFilter, paymentFilter, upiAppFilter, customFrom, customTo]);
 
-  const totalIncome = filteredTransactions.filter(t => t.type === 'Income').reduce((a, b) => a + (b.amount || 0), 0);
-  const totalExpense = filteredTransactions.filter(t => t.type === 'Expense').reduce((a, b) => a + (b.amount || 0), 0);
+  const totalIncome = filteredTransactions.filter(t => t.type === 'Income').reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
+  const totalExpense = filteredTransactions.filter(t => t.type === 'Expense').reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
 
-  // Staff-wise summary for filtered transactions
   const staffSummary = {};
   filteredTransactions.forEach(t => {
-    const name = t.user || 'Unknown';
+    const name = String(t.user || 'Unknown');
     if (!staffSummary[name]) staffSummary[name] = { income: 0, expense: 0, count: 0 };
-    if (t.type === 'Income') staffSummary[name].income += (t.amount || 0);
-    else staffSummary[name].expense += (t.amount || 0);
+    const amt = parseFloat(t.amount) || 0;
+    if (t.type === 'Income') staffSummary[name].income += amt;
+    else staffSummary[name].expense += amt;
     staffSummary[name].count++;
   });
 
-  // BUG-R3 FIX: uniqueStaff from book-filtered transactions
-  const uniqueStaff = Array.from(new Set(transactions.map(t => t.user).filter(Boolean)));
+  const uniqueStaff = Array.from(new Set(transactions.map(t => String(t.user || '')).filter(Boolean)));
 
-  // Doughnut Chart Data (by Category) based on FILTERED transactions
   const chartCategoryTotals = {};
   filteredTransactions.filter(t => t.type === chartMode).forEach(t => {
-    chartCategoryTotals[t.category] = (chartCategoryTotals[t.category] || 0) + (t.amount || 0);
+    const cat = String(t.category || 'Uncategorized');
+    chartCategoryTotals[cat] = (chartCategoryTotals[cat] || 0) + (parseFloat(t.amount) || 0);
   });
 
   const doughnutData = {
@@ -231,16 +229,17 @@ export default function Reports() {
     }]
   };
 
-  // Monthly Bar Chart based on FILTERED transactions
   const monthlyData = {};
   filteredTransactions.forEach(t => {
     if (!t.date) return;
-    const d = new Date(t.date + 'T00:00:00'); // force local parse
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; // sortable key
-    const label = d.toLocaleString('default', { month: 'short', year: '2-digit' }); // display label
+    const d = new Date(String(t.date) + 'T00:00:00');
+    if (isNaN(d.getTime())) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
     if (!monthlyData[key]) monthlyData[key] = { label, income: 0, expense: 0 };
-    if (t.type === 'Income') monthlyData[key].income += (t.amount || 0);
-    else monthlyData[key].expense += (t.amount || 0);
+    const amt = parseFloat(t.amount) || 0;
+    if (t.type === 'Income') monthlyData[key].income += amt;
+    else monthlyData[key].expense += amt;
   });
 
   const sortedKeys = Object.keys(monthlyData).sort();
@@ -557,12 +556,12 @@ export default function Reports() {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+        <div className="filter-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
           <div className="input-group">
             <label>Filter by Customer</label>
             <select value={partyFilter} onChange={(e) => setPartyFilter(e.target.value)}>
               <option value="all">All Customers</option>
-              {uniqueParties.map((p, i) => <option key={i} value={p}>{p}</option>)}
+              {uniqueParties.map((p, i) => <option key={i} value={p}>{String(p)}</option>)}
             </select>
           </div>
           <div className="input-group">
@@ -570,7 +569,7 @@ export default function Reports() {
             <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
               <option value="all">All Categories</option>
               {Array.from(new Set([...categories.map(c => c.Name), ...transactions.map(t => t.category)])).filter(Boolean).map((c, i) => (
-                <option key={i} value={c}>{c}</option>
+                <option key={i} value={c}>{String(c)}</option>
               ))}
             </select>
           </div>
@@ -578,7 +577,6 @@ export default function Reports() {
             <label>Filter by Staff</label>
             <select value={staffFilter} onChange={(e) => setStaffFilter(e.target.value)}>
               <option value="all">All Staff</option>
-              {/* BUG-R3 FIX: show display name in dropdown */}
               {uniqueStaff.map((s, i) => <option key={i} value={s}>{getStaffName(s)}</option>)}
             </select>
           </div>
@@ -586,7 +584,7 @@ export default function Reports() {
             <label>Filter by Cashbook</label>
             <select value={bookFilter} onChange={(e) => setBookFilter(e.target.value)}>
               <option value="all">All Cashbooks</option>
-              {books.map(b => <option key={b.ID} value={b.ID}>{b.Name}</option>)}
+              {books.map(b => <option key={b.ID} value={b.ID}>{String(b.Name || '')}</option>)}
             </select>
           </div>
           <div className="input-group">
@@ -618,7 +616,7 @@ export default function Reports() {
           )}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', backgroundColor: 'var(--bg-color)', borderRadius: '12px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', padding: '16px', backgroundColor: 'var(--bg-color)', borderRadius: '12px', marginBottom: '16px' }}>
           <div>
             <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Filtered Income</div>
             <div className="text-success" style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>₹{totalIncome.toFixed(2)}</div>

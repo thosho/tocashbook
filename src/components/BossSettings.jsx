@@ -341,7 +341,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
             <label>Address</label>
             <input type="text" value={settings.Address || ''} onChange={e => setLocalSettings({...settings, Address: e.target.value})} />
           </div>
-          <div className="input-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: 0 }}>
+          <div className="input-group filter-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: 0 }}>
             <div>
               <label>Business Phone</label>
               <input type="text" value={settings.Phone || ''} onChange={e => setLocalSettings({...settings, Phone: e.target.value})} />
@@ -351,7 +351,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
               <input type="email" placeholder="contact@example.com" value={settings.Email || ''} onChange={e => setLocalSettings({...settings, Email: e.target.value})} />
             </div>
           </div>
-          <div className="input-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: 0 }}>
+          <div className="input-group filter-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: 0 }}>
             <div>
               <label>Website (Optional)</label>
               <input type="text" placeholder="www.example.com" value={settings.Website || ''} onChange={e => setLocalSettings({...settings, Website: e.target.value})} />
@@ -367,7 +367,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
           </div>
           <div className="input-group">
             <label>Company Logo (Optional)</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
               {settings.Logo && <img src={settings.Logo} alt="Logo" style={{ height: '40px', width: 'auto', borderRadius: '4px' }} />}
               <input 
                 type="file" 
@@ -489,7 +489,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
               </div>
               
               {/* Bottom Section: Details Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', zIndex: 1, marginTop: 'auto', columnGap: '16px' }}>
+              <div className="filter-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', zIndex: 1, marginTop: 'auto', columnGap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {settings.Phone && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.85rem', color: '#cbd5e1' }}>
@@ -556,14 +556,14 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
         <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
           Change your default boss login credentials. If you ever forget your new PIN, open your Google Sheet's "Users" tab and manually change it back to 1234 to regain access.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+        <div className="filter-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '8px' }}>
           <div className="input-group" style={{ marginBottom: 0 }}>
             <label>Admin Phone / Username</label>
-            <input type="text" value={adminUser.phone} onChange={e => setAdminUser({...adminUser, phone: e.target.value})} />
+            <input type="text" value={adminUser.phone} onChange={e => setAdminUser({...adminUser, phone: e.target.value})} style={{ width: '100%' }} />
           </div>
           <div className="input-group" style={{ marginBottom: 0 }}>
             <label>Admin PIN</label>
-            <input type="password" placeholder="Leave empty to keep current PIN" value={adminUser.pin} onChange={e => setAdminUser({...adminUser, pin: e.target.value})} />
+            <input type="password" placeholder="Leave empty to keep current PIN" value={adminUser.pin} onChange={e => setAdminUser({...adminUser, pin: e.target.value})} style={{ width: '100%' }} />
           </div>
         </div>
         <div style={{ borderTop: '1px solid var(--border-color)', marginTop: '16px', paddingTop: '16px' }}>
@@ -595,11 +595,11 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {users.map(u => (
-            <div key={u.ID} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--bg-color)', borderRadius: '8px' }}>
-              <div>
-                <strong>{u.Name || u.Username}</strong> <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>(Phone: {u.Phone || u.Username})</span>
+            <div key={u.ID} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', padding: '12px', background: 'var(--bg-color)', borderRadius: '8px' }}>
+              <div style={{ flex: 1, minWidth: 0, wordBreak: 'break-word' }}>
+                <strong>{u.Name || u.Username}</strong> <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', display: 'inline-block' }}>(Phone: {u.Phone || u.Username})</span>
               </div>
-              <button onClick={() => handleDeleteUser(u.ID)} className="text-danger" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+              <button onClick={() => handleDeleteUser(u.ID)} className="text-danger" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px' }}>
                 <Trash2 size={18} />
               </button>
             </div>
@@ -619,11 +619,11 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {categories.map(c => (
-            <div key={c.ID || c.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: 'var(--bg-color)', borderRadius: '8px' }}>
-              <div>
+            <div key={c.ID || c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', padding: '12px', background: 'var(--bg-color)', borderRadius: '8px' }}>
+              <div style={{ flex: 1, minWidth: 0, wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <strong>{c.Name || c.name}</strong> <span className={`badge ${c.Type === 'Income' ? 'badge-income' : 'badge-expense'}`}>{c.Type || c.type}</span>
               </div>
-              <button onClick={() => handleDeleteCategory(c.ID || c.id)} className="text-danger" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+              <button onClick={() => handleDeleteCategory(c.ID || c.id)} className="text-danger" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px' }}>
                 <Trash2 size={18} />
               </button>
             </div>
