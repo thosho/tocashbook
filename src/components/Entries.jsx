@@ -75,11 +75,14 @@ export default function Entries() {
     setSyncing(false);
   };
 
-  // BUG-C2 FIX: Include entries with no bookId (old entries) + entries matching active book
+  // BUG-C2 FIX: book_main catches entries with no bookId (legacy), other books only exact match
   const filteredTx = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     let result = [...transactions]
-      .filter(t => !t.bookId || t.bookId === activeBookId)
+      .filter(t => {
+        if (activeBookId === 'book_main') return !t.bookId || t.bookId === 'book_main';
+        return t.bookId === activeBookId;
+      })
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .filter(t => {
         const typeMatch = filterType === 'all' || t.type === filterType;

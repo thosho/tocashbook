@@ -49,6 +49,9 @@ export default function StaffEntry({ user, setAuthUser }) {
   
   const [syncing, setSyncing] = useState(false);
   const fileInputRef = useRef(null);
+  // Ref to always hold the currently active/resolved bookId for transactions
+  // (avoids stale closure issue where activeBookId from context hasn't updated yet)
+  const resolvedBookIdRef = useRef(activeBookId);
 
   useEffect(() => {
     loadData();
@@ -101,6 +104,8 @@ export default function StaffEntry({ user, setAuthUser }) {
       currentBookId = allowedBooks[0].ID;
       setActiveBookId(currentBookId);
     }
+    // Always keep the ref in sync so handleSubmit uses correct bookId immediately
+    resolvedBookIdRef.current = currentBookId;
 
     // BUG FIX #11: Case-insensitive filter for staff's own transactions
     setTransactions(
@@ -244,7 +249,7 @@ export default function StaffEntry({ user, setAuthUser }) {
         imageFile: image,
         imageFilename: imageFilename,
         synced: false,
-        bookId: activeBookId
+        bookId: resolvedBookIdRef.current || activeBookId  // Use resolved ref to avoid stale state
       };
 
       await addTransaction(newTx);

@@ -60,8 +60,13 @@ export default function BossHome({ user, setAuthUser }) {
 
   const loadData = async () => {
     const allTrans = await getTransactions();
-    // Boss sees ALL transactions across all books; filter only if a specific book is selected
-    const filtered = activeBookId ? allTrans.filter(t => !t.bookId || t.bookId === activeBookId || activeBookId === 'ALL') : allTrans;
+    // Fix: book_main also catches legacy entries with no bookId (backward compat)
+    // Other books only show entries explicitly saved with that bookId
+    const filtered = allTrans.filter(t => {
+      if (!activeBookId) return true;
+      if (activeBookId === 'book_main') return !t.bookId || t.bookId === 'book_main';
+      return t.bookId === activeBookId;
+    });
     setTransactions(filtered);
     const s = await getSettings();
     setSettings(s);
