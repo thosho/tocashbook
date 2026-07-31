@@ -1,6 +1,7 @@
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { LayoutDashboard, PlusCircle, List, BarChart3, Settings, Users } from 'lucide-react';
 import OfflineBanner from './OfflineBanner';
+import { APP_NAME, APP_VERSION } from '../services/authUtils';
 
 export default function SidebarLayout() {
   const location = useLocation();
@@ -11,7 +12,7 @@ export default function SidebarLayout() {
       {/* Desktop Sidebar */}
       <div className="sidebar">
         <div className="sidebar-header">
-          <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--primary)' }}>ToCashBook</h2>
+          <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--primary)' }}>{APP_NAME}</h2>
         </div>
         <div className="sidebar-nav">
           <Link to="/dashboard" className={`sidebar-item ${currentPath === '/dashboard' ? 'active' : ''}`}>
@@ -34,7 +35,7 @@ export default function SidebarLayout() {
           </Link>
         </div>
         <div className="sidebar-footer">
-          <div style={{ fontWeight: 'bold' }}>ToCashBook v1.0</div>
+          <div style={{ fontWeight: 'bold' }}>{APP_NAME} {APP_VERSION}</div>
           <div>Developed by</div>
           <div>
             <a href="https://thoshotech.com" target="_blank" rel="noopener noreferrer">

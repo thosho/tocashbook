@@ -41,3 +41,7 @@ export const verifyPIN = async (plainPin, storedHash) => {
   // Legacy fallback: plain-text comparison (will be upgraded on next save)
   return String(plainPin) === String(storedHash);
 };
+
+// Global App Info — centralized so Settings and Sidebar version numbers always match perfectly
+export const APP_NAME = "ToCashBook";
+export const APP_VERSION = "v1.0";

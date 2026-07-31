@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getUsers, saveUsers, getCategories, saveCategories, exportDatabase, importDatabase, getSettings, setSettings, getApiSecret, setApiSecret, getApiLink, setApiLink } from '../services/localDb';
 import { pushUsers, pushCategories, pushSettings } from '../services/sheetsApi';
-import { hashPIN } from '../services/authUtils';
+import { hashPIN, APP_NAME, APP_VERSION } from '../services/authUtils';
 import { subscribePush, getNotificationPermission } from '../services/notificationService';
 import { Plus, Trash2, Download, Upload, Save, Sun, Moon, Monitor, Bell, BellOff, BellRing, Contact, Shield, Share2, Mail, Globe, Link2, LogOut } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -284,7 +284,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
   return (
     <div className="container animate-fade-in pb-20">
       <div style={{ textAlign: 'center', margin: '16px 0 24px 0' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--primary)', letterSpacing: '-0.5px', margin: '0 0 4px 0' }}>ToCashBook</h1>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--primary)', letterSpacing: '-0.5px', margin: '0 0 4px 0' }}>{APP_NAME}</h1>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0', fontWeight: '500' }}>Developed by Thosho Tech</p>
       </div>
 
@@ -712,12 +712,12 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
         className="btn btn-outline text-danger w-full" 
         style={{ marginBottom: '24px', minHeight: '46px', borderColor: 'var(--danger-bg)', fontSize: '0.95rem', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
       >
-        <LogOut size={18} /> Log Out from ToCashBook
+        <LogOut size={18} /> Log Out from {APP_NAME}
       </button>
 
       {/* About Thosho Tech Section */}
-      <div className="card glass animate-fade-in" style={{ padding: '24px', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.2)', background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%)', borderRadius: '16px', marginBottom: '20px' }}>
-        <h3 style={{ margin: '0 0 6px 0', fontSize: '1.2rem', fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.5px' }}>
+      <div className="card glass animate-fade-in" style={{ padding: '24px', textAlign: 'center', border: '1px solid rgba(59, 130, 246, 0.25)', background: 'var(--surface-color)', boxShadow: '0 8px 24px rgba(59, 130, 246, 0.08)', borderRadius: '16px', marginBottom: '20px' }}>
+        <h3 style={{ margin: '0 0 6px 0', fontSize: '1.2rem', fontWeight: '800', color: '#3b82f6', letterSpacing: '0.5px' }}>
           Thosho Tech
         </h3>
         <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
@@ -732,7 +732,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
           </a>
         </div>
         <div style={{ marginTop: '16px', fontSize: '0.75rem', color: 'var(--text-secondary)', opacity: 0.8 }}>
-          ToCashBook v2.5.0 · All Rights Reserved © {new Date().getFullYear()} Thosho Tech
+          {APP_NAME} {APP_VERSION} · All Rights Reserved © {new Date().getFullYear()} Thosho Tech
         </div>
       </div>
     </div>
