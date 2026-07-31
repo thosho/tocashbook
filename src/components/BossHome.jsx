@@ -60,7 +60,9 @@ export default function BossHome({ user, setAuthUser }) {
 
   const loadData = async () => {
     const allTrans = await getTransactions();
-    setTransactions(allTrans.filter(t => t.bookId === activeBookId));
+    // Boss sees ALL transactions across all books; filter only if a specific book is selected
+    const filtered = activeBookId ? allTrans.filter(t => !t.bookId || t.bookId === activeBookId || activeBookId === 'ALL') : allTrans;
+    setTransactions(filtered);
     const s = await getSettings();
     setSettings(s);
     const u = await getUsers();
@@ -357,7 +359,35 @@ export default function BossHome({ user, setAuthUser }) {
         )}
       </div>
 
-      {/* Removed Recent Staff Entries section to save space, per user request */}
+      {/* Recent Entries */}
+      <div className="card glass" style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0 }}>📋 Recent Entries</h3>
+          <Link to="/entries" style={{ fontSize: '0.82rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: '600' }}>View All →</Link>
+        </div>
+        {transactions.length === 0 ? (
+          <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px 0' }}>No entries yet. Staff entries will appear here after sync.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {[...transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10).map(t => (
+              <div key={t.id} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '10px 12px', borderRadius: '10px',
+                background: t.type === 'Income' ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+                border: `1px solid ${t.type === 'Income' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`
+              }}>
+                <div>
+                  <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{t.category} {t.partyName ? `· ${t.partyName}` : ''}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.date} · by {t.user || 'Unknown'}</div>
+                </div>
+                <div style={{ fontWeight: '700', color: t.type === 'Income' ? 'var(--success)' : 'var(--danger)', fontSize: '1rem' }}>
+                  {t.type === 'Income' ? '+' : '-'}₹{(t.amount || 0).toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Create Book Modal */}
       {showCreateBook && (
