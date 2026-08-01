@@ -50,7 +50,19 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
         setShowSetup(false);
       } catch (err) {
         console.error(err);
-        setError('Google Setup failed: ' + err.message);
+        if (err.message.includes('https://script.google.com/home/usersettings')) {
+          setError(
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <strong>Google requires one final step:</strong>
+              <span>Please click the link below to allow your account to create the script, turn the switch to <b>ON</b>, and then click Automated Setup again.</span>
+              <a href="https://script.google.com/home/usersettings" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 'bold', textDecoration: 'underline' }}>
+                👉 Open Apps Script Settings
+              </a>
+            </div>
+          );
+        } else {
+          setError('Google Setup failed: ' + err.message);
+        }
       }
       setLoading(false);
     },
