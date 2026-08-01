@@ -22,6 +22,7 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
   const [showSetup, setShowSetup] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [pendingAuthUrl, setPendingAuthUrl] = useState(''); // URL needing authorization
 
   // Multi-branch state
   const [branches, setBranches] = useState([]);
@@ -40,30 +41,24 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
       setError('');
       try {
         const { webAppUrl, apiSecret } = await setupGoogleBackend(tokenResponse.access_token);
-        setApiLinkState(webAppUrl);
-        setApiSecretState(apiSecret);
         
+        // Immediately save to localforage so it survives page refresh
         await setApiLink(webAppUrl);
         await setApiSecret(apiSecret);
         await initDb();
+        setApiLinkState(webAppUrl);
+        setApiSecretState(apiSecret);
         
-        // Google Apps Script deployments can take up to 10-15 seconds to propagate globally
-        let retries = 5;
-        let success = false;
-        while (retries > 0 && !success) {
-          try {
-            await fetchAllData();
-            success = true;
-          } catch (e) {
-            retries--;
-            if (retries === 0) {
-              throw new Error('AUTH_REQUIRED');
-            }
-            await new Promise(res => setTimeout(res, 3000));
-          }
+        // Try to connect — will fail until user authorizes the new script
+        try {
+          await fetchAllData();
+          setShowSetup(false); // Success! Go to login screen
+        } catch (fetchErr) {
+          // Script needs owner authorization first (Google requirement for new deployments)
+          // Store the URL so we can show the authorize button
+          setPendingAuthUrl(webAppUrl);
+          setError('__AUTH_REQUIRED__');
         }
-        
-        setShowSetup(false);
       } catch (err) {
         console.error(err);
         if (err.message.includes('https://script.google.com/home/usersettings')) {
@@ -73,23 +68,6 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
               <span>Please click the link below to allow your account to create the script, turn the switch to <b>ON</b>, and then click Automated Setup again.</span>
               <a href="https://script.google.com/home/usersettings" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 'bold', textDecoration: 'underline' }}>
                 👉 Open Apps Script Settings
-              </a>
-            </div>
-          );
-        } else if (err.message.includes('AUTH_REQUIRED')) {
-          setError(
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <strong>Script Authorization Required:</strong>
-              <span>Google requires you to authorize your new database script before it can be used.</span>
-              <ol style={{ margin: '0 0 0 20px', padding: 0 }}>
-                <li>Click the link below (opens in new tab).</li>
-                <li>Choose your Google account.</li>
-                <li>Click <b>Advanced</b> &gt; <b>Go to Open Cashbook Backend (unsafe)</b>.</li>
-                <li>Click <b>Allow</b>.</li>
-                <li>Once you see a white page with an error, close the tab and click <b>Connect to Business</b> below!</li>
-              </ol>
-              <a href={apiLinkState || '#'} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 'bold', textDecoration: 'underline', wordBreak: 'break-all' }}>
-                👉 Authorize Database Script
               </a>
             </div>
           );
@@ -307,12 +285,53 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
           </div>
         )}
 
-        {/* Error */}
-        {error && (
+        {/* Auth Required Card - replaces the error box */}
+        {error === '__AUTH_REQUIRED__' && pendingAuthUrl ? (
+          <div style={{ background: 'linear-gradient(135deg,#fff7ed,#fef3c7)', border: '2px solid #f59e0b', borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
+            <p style={{ fontWeight: '700', fontSize: '1rem', margin: '0 0 8px', color: '#92400e' }}>⚡ One Final Step</p>
+            <p style={{ fontSize: '0.85rem', color: '#78350f', margin: '0 0 12px' }}>Google requires you to authorize the new database before it can connect. It takes just 3 clicks!</p>
+            <ol style={{ margin: '0 0 14px 18px', padding: 0, fontSize: '0.85rem', color: '#78350f', lineHeight: '1.8' }}>
+              <li>Click <b>Open Authorization Link</b> below (new tab opens)</li>
+              <li>Choose your Google account</li>
+              <li>Click <b>Advanced</b> → <b>Go to Open Cashbook (unsafe)</b> → <b>Allow</b></li>
+              <li>When you see a page with text, come back here</li>
+            </ol>
+            <a
+              href={pendingAuthUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'block', textAlign: 'center', padding: '10px', background: '#f59e0b', color: 'white', borderRadius: '10px', fontWeight: '700', textDecoration: 'none', marginBottom: '10px' }}
+            >
+              🔗 Open Authorization Link
+            </a>
+            <button
+              type="button"
+              className="btn btn-primary w-full"
+              style={{ minHeight: '48px' }}
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  await fetchAllData();
+                  setError('');
+                  setPendingAuthUrl('');
+                  setShowSetup(false);
+                } catch(e) {
+                  setError(e.message.includes('Unauthorized') || e.message.includes('fetch') 
+                    ? '__AUTH_REQUIRED__' 
+                    : 'Connection failed: ' + e.message);
+                }
+                setLoading(false);
+              }}
+            >
+              {loading ? 'Connecting...' : '✅ I\'ve Authorized — Connect Me Now'}
+            </button>
+          </div>
+        ) : error ? (
           <div style={{ backgroundColor: 'var(--danger-bg)', color: 'var(--danger)', padding: '12px', borderRadius: '10px', marginBottom: '16px', fontSize: '0.875rem' }}>
             {error}
           </div>
-        )}
+        ) : null}
 
         {/* Setup Form */}
         {showSetup ? (
