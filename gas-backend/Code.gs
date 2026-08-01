@@ -100,6 +100,12 @@ function doGet(e) {
   }
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // Auto-initialize the database if this is a fresh automated setup
+  if (!ss.getSheetByName('Users')) {
+    initializeDatabase();
+  }
+
   if (action === 'get_all_data') {
     return json({
       status: 'success',
