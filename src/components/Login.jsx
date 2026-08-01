@@ -46,7 +46,21 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
         await setApiLink(webAppUrl);
         await setApiSecret(apiSecret);
         await initDb();
-        await fetchAllData();
+        
+        // Google Apps Script deployments can take up to 10-15 seconds to propagate globally
+        let retries = 5;
+        let success = false;
+        while (retries > 0 && !success) {
+          try {
+            await fetchAllData();
+            success = true;
+          } catch (e) {
+            retries--;
+            if (retries === 0) throw new Error('Could not connect: ' + e.message + '. The setup worked, but Google is taking too long to activate the link. Please wait 1 minute and click the manual Connect button below.');
+            await new Promise(res => setTimeout(res, 3000));
+          }
+        }
+        
         setShowSetup(false);
       } catch (err) {
         console.error(err);
