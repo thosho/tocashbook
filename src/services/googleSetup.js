@@ -11,13 +11,13 @@ export async function setupGoogleBackend(accessToken) {
     'Content-Type': 'application/json',
   };
 
-  // 1. Create the Spreadsheet
-  console.log('Creating Spreadsheet...');
-  let sheetRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+  // ── STEP 1: Create the Spreadsheet ─────────────────────────────────────────
+  console.log('[Setup] Step 1: Creating Spreadsheet...');
+  const sheetRes = await fetch('https://www.googleapis.com/drive/v3/files', {
     method: 'POST',
     headers,
     body: JSON.stringify({
-      name: 'Open Cashbook Database (Automated)',
+      name: 'Open Cashbook Database',
       mimeType: 'application/vnd.google-apps.spreadsheet',
     }),
   });
@@ -27,10 +27,11 @@ export async function setupGoogleBackend(accessToken) {
   }
   const sheetData = await sheetRes.json();
   const spreadsheetId = sheetData.id;
+  console.log('[Setup] Spreadsheet created:', spreadsheetId);
 
-  // 2. Create the Apps Script Project bound to the Spreadsheet
-  console.log('Creating Apps Script Project...');
-  let scriptRes = await fetch('https://script.googleapis.com/v1/projects', {
+  // ── STEP 2: Create the Apps Script Project ─────────────────────────────────
+  console.log('[Setup] Step 2: Creating Apps Script Project...');
+  const scriptRes = await fetch('https://script.googleapis.com/v1/projects', {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -38,49 +39,43 @@ export async function setupGoogleBackend(accessToken) {
       parentId: spreadsheetId,
     }),
   });
-  
   if (!scriptRes.ok) {
-    // If bound script fails (sometimes due to API quirks), fallback to standalone
-    console.warn('Bound script creation failed, trying standalone...');
-    scriptRes = await fetch('https://script.googleapis.com/v1/projects', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ title: 'Open Cashbook Backend' }),
-    });
-    if (!scriptRes.ok) {
-      const errText = await scriptRes.text();
-      throw new Error('Failed to create Apps Script Project: ' + errText);
-    }
+    const errText = await scriptRes.text();
+    throw new Error('Failed to create Apps Script Project: ' + errText);
   }
   const scriptData = await scriptRes.json();
   const scriptId = scriptData.scriptId;
+  console.log('[Setup] Script created:', scriptId);
 
-  // 3. Generate a secure API Secret and inject it + the Spreadsheet ID into Code.gs
+  // ── STEP 3: Generate secret & patch Code.gs ────────────────────────────────
   const generatedSecret = 'tcb_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-  
-  // 4. Update the Apps Script Project with Code.gs and appsscript.json
+
+  // Replace getActiveSpreadsheet() with openById() so standalone script works
   const modifiedCode = codeGsRaw
     .replace(/SpreadsheetApp\.getActiveSpreadsheet\(\)/g, `SpreadsheetApp.openById('${spreadsheetId}')`)
-    .replace(/return PropertiesService\.getScriptProperties\(\)\.getProperty\('APP_SECRET'\) \|\| '';/g, `return '${generatedSecret}';`);
+    .replace(
+      /return PropertiesService\.getScriptProperties\(\)\.getProperty\('APP_SECRET'\) \|\| '';/g,
+      `return '${generatedSecret}';`
+    );
 
+  // ── STEP 4: Push Code + Manifest ───────────────────────────────────────────
+  console.log('[Setup] Step 4: Pushing code...');
   const manifest = {
     timeZone: 'Asia/Kolkata',
     dependencies: {},
     exceptionLogging: 'STACKDRIVER',
+    runtimeVersion: 'V8',
     oauthScopes: [
       'https://www.googleapis.com/auth/spreadsheets',
+      'https://www.googleapis.com/auth/drive',
       'https://www.googleapis.com/auth/script.external_request',
-      'https://www.googleapis.com/auth/userinfo.email'
     ],
-    runtimeVersion: 'V8',
     webapp: {
       executeAs: 'USER_DEPLOYING',
       access: 'ANYONE_ANONYMOUS',
     },
   };
 
-  // 4. Update the Script Content
-  console.log('Pushing code to Apps Script...');
   const contentRes = await fetch(`https://script.googleapis.com/v1/projects/${scriptId}/content`, {
     method: 'PUT',
     headers,
@@ -92,45 +87,66 @@ export async function setupGoogleBackend(accessToken) {
     }),
   });
   if (!contentRes.ok) {
-     const errorTxt = await contentRes.text();
-     throw new Error('Failed to push code to Apps Script: ' + errorTxt);
+    const errText = await contentRes.text();
+    throw new Error('Failed to push code to Apps Script: ' + errText);
   }
 
-  // 5. Create a Version
-  console.log('Creating version...');
+  // ── STEP 5: Create a Version ────────────────────────────────────────────────
+  console.log('[Setup] Step 5: Creating version...');
   const versionRes = await fetch(`https://script.googleapis.com/v1/projects/${scriptId}/versions`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ description: 'Initial Automated Setup' }),
+    body: JSON.stringify({ description: 'v1 – Automated Setup' }),
   });
-  if (!versionRes.ok) throw new Error('Failed to create script version');
+  if (!versionRes.ok) {
+    const errText = await versionRes.text();
+    throw new Error('Failed to create version: ' + errText);
+  }
   const versionData = await versionRes.json();
   const versionNumber = versionData.versionNumber;
 
-  // 6. Deploy as Web App
-  console.log('Deploying Web App...');
+  // ── STEP 6: Deploy as Web App ───────────────────────────────────────────────
+  console.log('[Setup] Step 6: Deploying Web App...');
   const deployRes = await fetch(`https://script.googleapis.com/v1/projects/${scriptId}/deployments`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
-      versionNumber: versionNumber,
+      versionNumber,
       manifestFileName: 'appsscript',
-      description: 'Production Deployment',
+      description: 'Open Cashbook Web App',
     }),
   });
   if (!deployRes.ok) {
-     const errorTxt = await deployRes.text();
-     throw new Error('Failed to deploy Web App: ' + errorTxt);
+    const errText = await deployRes.text();
+    throw new Error('Failed to deploy Web App: ' + errText);
   }
   const deployData = await deployRes.json();
-  
-  // The entryPoint object contains the Web App URL
+  console.log('[Setup] Deploy response:', JSON.stringify(deployData));
+
+  // ── STEP 7: Extract the Web App URL ────────────────────────────────────────
+  // The Apps Script API returns the URL inside entryPoints[0].webApp.url
   let webAppUrl = '';
-  if (deployData.entryPoints && deployData.entryPoints.length > 0 && deployData.entryPoints[0].webApp) {
-    webAppUrl = deployData.entryPoints[0].webApp.url;
-  } else {
-    throw new Error('Deployment successful, but no Web App URL returned. Full API Response: ' + JSON.stringify(deployData));
+  const entries = deployData.entryPoints || [];
+  for (const ep of entries) {
+    if (ep.webApp && ep.webApp.url) {
+      webAppUrl = ep.webApp.url;
+      break;
+    }
+    if (ep.entryPointConfig && ep.entryPointConfig.webapp && ep.entryPointConfig.webapp.url) {
+      webAppUrl = ep.entryPointConfig.webapp.url;
+      break;
+    }
   }
 
+  if (!webAppUrl) {
+    // Sometimes the URL is at the top level of the deployment object
+    webAppUrl = deployData.webAppUrl || '';
+  }
+
+  if (!webAppUrl) {
+    throw new Error('Setup complete but Web App URL missing. API said: ' + JSON.stringify(deployData));
+  }
+
+  console.log('[Setup] Web App URL:', webAppUrl);
   return { webAppUrl, apiSecret: generatedSecret };
 }
