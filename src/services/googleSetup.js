@@ -135,10 +135,10 @@ export async function setupGoogleBackend(accessToken) {
   
   // The entryPoint object contains the Web App URL
   let webAppUrl = '';
-  if (deployData.entryPoints && deployData.entryPoints.length > 0) {
-    webAppUrl = deployData.entryPoints[0].entryPointConfig.webapp.url;
+  if (deployData.entryPoints && deployData.entryPoints.length > 0 && deployData.entryPoints[0].webApp) {
+    webAppUrl = deployData.entryPoints[0].webApp.url;
   } else {
-    throw new Error('Deployment successful, but no Web App URL returned by API.');
+    throw new Error('Deployment successful, but no Web App URL returned. Full API Response: ' + JSON.stringify(deployData));
   }
 
   return { webAppUrl, apiSecret: generatedSecret };
