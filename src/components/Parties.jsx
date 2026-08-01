@@ -51,12 +51,11 @@ export default function Parties({ user }) {
   const loadParties = async () => {
     const transactions = await getTransactions();
     
-    // ACCOUNTING: Main Book = General Ledger = consolidated view of ALL cashbooks.
-    // Sub-books show only their own transactions.
-    // Entries with no bookId are treated as Main Book (backward compatibility).
+    // ACCOUNTING: Each book is strictly isolated to its own ledger transactions.
+    // Entries with no bookId are treated as belonging exclusively to Main Book (backward compatibility).
     const filteredTransactions = (!activeBookId || activeBookId === 'book_main')
-      ? transactions  // Main Book = ALL transactions across all books
-      : transactions.filter(t => String(t.bookId) === String(activeBookId) || !t.bookId);
+      ? transactions.filter(t => !t.bookId || String(t.bookId) === 'book_main')
+      : transactions.filter(t => String(t.bookId) === String(activeBookId));
 
     const partyMap = {};
 

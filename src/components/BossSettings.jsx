@@ -22,6 +22,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
   const [newUser, setNewUser] = useState({ name: '', phone: '', pin: '' });
   const [newCategory, setNewCategory] = useState({ name: '', type: 'Income' });
   const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState(null); // { type: 'success'|'warning'|'error', text: string }
   const [notifPermission, setNotifPermission] = useState('default');
   const [notifLoading, setNotifLoading] = useState(false);
 
@@ -200,11 +201,9 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
       const finalAdminPIN = adminUser.pin ? await hashPIN(adminUser.pin) : (adminRecord.PIN || '1234');
       const allUsers = [...users, { ...adminRecord, Phone: adminUser.phone, PIN: finalAdminPIN }];
       await saveUsers(allUsers);
-      await pushUsers(allUsers);
       
       // 2. Categories
       await saveCategories(categories);
-      await pushCategories(categories);
       
       // 3. Settings
       await setSettings(settings);
@@ -216,27 +215,36 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
       // Apply session timeout live
       if (setSessionTimeout) setSessionTimeout(parseInt(settings.SessionTimeout || '30', 10));
       
-      const settingsArr = [
-        { Key: 'BrandName', Value: settings.BrandName || '' },
-        { Key: 'Address', Value: settings.Address || '' },
-        { Key: 'Phone', Value: settings.Phone || '' },
-        { Key: 'Email', Value: settings.Email || '' },
-        { Key: 'Website', Value: settings.Website || '' },
-        { Key: 'SocialMedia', Value: settings.SocialMedia || '' },
-        { Key: 'Tagline', Value: settings.Tagline || '' },
-        { Key: 'UpiId', Value: settings.UpiId || '' },
-        { Key: 'DateFormat', Value: settings.DateFormat || 'DD/MM/YYYY' },
-        { Key: 'OpeningBalance', Value: settings.OpeningBalance || '0' },
-        { Key: 'SessionTimeout', Value: settings.SessionTimeout || '30' },
-        { Key: 'NtfyTopic', Value: settings.NtfyTopic || '' }
-        // DarkMode is device-specific, not synced to Sheet
-      ];
-      await pushSettings(settingsArr);
-      alert('Settings and Data saved & synced successfully!');
+      setSaveMsg({ type: 'success', text: '✅ Settings saved locally.' });
+
+      // Try cloud sync silently
+      try {
+        await pushUsers(allUsers);
+        await pushCategories(categories);
+        const settingsArr = [
+          { Key: 'BrandName', Value: settings.BrandName || '' },
+          { Key: 'Address', Value: settings.Address || '' },
+          { Key: 'Phone', Value: settings.Phone || '' },
+          { Key: 'Email', Value: settings.Email || '' },
+          { Key: 'Website', Value: settings.Website || '' },
+          { Key: 'SocialMedia', Value: settings.SocialMedia || '' },
+          { Key: 'Tagline', Value: settings.Tagline || '' },
+          { Key: 'UpiId', Value: settings.UpiId || '' },
+          { Key: 'DateFormat', Value: settings.DateFormat || 'DD/MM/YYYY' },
+          { Key: 'OpeningBalance', Value: settings.OpeningBalance || '0' },
+          { Key: 'SessionTimeout', Value: settings.SessionTimeout || '30' },
+          { Key: 'NtfyTopic', Value: settings.NtfyTopic || '' },
+        ];
+        await pushSettings(settingsArr);
+        setSaveMsg({ type: 'success', text: '✅ Settings saved & synced to cloud!' });
+      } catch (syncErr) {
+        setSaveMsg({ type: 'warning', text: '⚠️ Saved locally. Cloud sync failed — will retry when online.' });
+      }
     } catch (e) {
-      alert('Failed to sync: ' + e.message);
+      setSaveMsg({ type: 'error', text: '❌ Save failed: ' + e.message });
     }
     setSaving(false);
+    setTimeout(() => setSaveMsg(null), 4000);
   };
 
   const handleEnableNotifications = async () => {
@@ -293,6 +301,17 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
         <button className="btn btn-primary" onClick={handleSaveAll} disabled={saving} style={{ padding: '10px 18px', fontSize: '0.9rem', minHeight: '42px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           {saving ? 'Syncing...' : 'Save & Sync Settings'} <Save size={18} />
         </button>
+        {saveMsg && (
+          <div style={{
+            width: '100%', padding: '10px 14px', borderRadius: '10px', fontSize: '0.875rem', fontWeight: '500',
+            background: saveMsg.type === 'success' ? 'rgba(34,197,94,0.15)' : saveMsg.type === 'warning' ? 'rgba(234,179,8,0.15)' : 'rgba(239,68,68,0.15)',
+            color: saveMsg.type === 'success' ? 'var(--success)' : saveMsg.type === 'warning' ? '#ca8a04' : 'var(--danger)',
+            border: `1px solid ${saveMsg.type === 'success' ? 'rgba(34,197,94,0.3)' : saveMsg.type === 'warning' ? 'rgba(234,179,8,0.3)' : 'rgba(239,68,68,0.3)'}`,
+            marginTop: '8px'
+          }}>
+            {saveMsg.text}
+          </div>
+        )}
       </div>
 
       <div className="card glass mb-4">

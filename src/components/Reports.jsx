@@ -101,7 +101,7 @@ export default function Reports() {
     const phone = String(t.partyPhone || '').replace(/\D/g, ''); // digits only
     const amount = `₹${t.amount}`;
     const type = t.type === 'Income' ? 'received' : 'paid';
-    const date = t.date;
+    const date = formatDate(t.date) || String(t.date || '').split('T')[0];
     const category = t.category;
     const brand = settings.BrandName || 'Us';
     let msgText = `Hello${t.partyName ? ' ' + t.partyName : ''},\n\n` +
@@ -814,7 +814,7 @@ export default function Reports() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.partyName || t.category}</div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                    {t.date} · {t.paymentMode || 'Cash'} {t.reference && `· Ref: ${t.reference}`}
+                    {formatDate(t.date) || String(t.date || '').split('T')[0]} · {t.paymentMode || 'Cash'} {t.reference && `· Ref: ${t.reference}`}
                     <br />Collected By: <span style={{ fontWeight: 'bold' }}>{getStaffName(t.user)}</span>
                     {t.bossNotes && <span style={{ color: 'var(--primary)', fontStyle: 'italic' }}> · 📝 {t.bossNotes}</span>}
                   </div>

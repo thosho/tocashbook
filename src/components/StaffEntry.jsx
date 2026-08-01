@@ -891,7 +891,7 @@ export default function StaffEntry({ user, setAuthUser }) {
             
             <div style={{ background: 'var(--bg-color)', borderRadius: '12px', padding: '16px', margin: '16px 0', textAlign: 'left' }}>
               <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: savedEntry.type === 'Income' ? 'var(--success)' : 'var(--danger)', marginBottom: '8px', textAlign: 'center' }}>
-                ₹{savedEntry.amount}
+                ₹{Number(savedEntry.amount || 0).toLocaleString('en-IN')}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '4px' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Party:</span>

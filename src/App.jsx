@@ -10,8 +10,8 @@ import SidebarLayout from './components/SidebarLayout';
 import Entries from './components/Entries';
 import SplashScreen from './components/SplashScreen';
 import { initDb, getSettings } from './services/localDb';
-import { AppProvider } from './context/AppContext';
 import PWAPrompt from './components/PWAPrompt';
+import { isAdminRole } from './services/authUtils';
 
 // ─── Session Persistence Helpers ──────────────────────────────────────────────
 // Use sessionStorage so session survives page refresh but clears on tab close.
@@ -139,7 +139,7 @@ function App() {
             <Route path="/" element={<Login setAuthUser={setAuthUser} setSessionTimeout={setSessionTimeoutMins} />} />
 
             {/* Boss Protected Routes */}
-            <Route element={authUser?.Role === 'Admin' ? <SidebarLayout /> : <Navigate to="/" />}>
+            <Route element={isAdminRole(authUser?.Role) ? <SidebarLayout /> : <Navigate to="/" />}>
               <Route path="/dashboard" element={<BossHome user={authUser} setAuthUser={setAuthUser} />} />
               <Route path="/entry" element={<StaffEntry user={authUser} setAuthUser={setAuthUser} />} />
               <Route path="/entries" element={<Entries />} />
@@ -153,7 +153,7 @@ function App() {
             <Route
               path="/staff-entry"
               element={
-                authUser?.Role === 'Staff'
+                authUser && !isAdminRole(authUser?.Role)
                   ? <StaffEntry user={authUser} setAuthUser={setAuthUser} />
                   : <Navigate to="/" />
               }

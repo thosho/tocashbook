@@ -78,16 +78,16 @@ export default function Entries() {
     setSyncing(false);
   };
 
-  // ACCOUNTING: Main Book = General Ledger = all transactions, skip auto-reflected copies.
-  // Individual books show only their own entries.
+  // ACCOUNTING: Each cashbook is strictly isolated — Main Book shows only book_main entries.
+  // Entries with no bookId are backward-compatible (treated as belonging exclusively to Main Book).
   const filteredTx = useMemo(() => {
     const q = String(searchQuery || '').toLowerCase().trim();
     let result = [...transactions]
       .filter(t => {
         if (!activeBookId || activeBookId === 'book_main') {
-          return !String(t.bossNotes || '').startsWith('Auto-reflected');
+          return !t.bookId || String(t.bookId) === 'book_main';
         }
-        return t.bookId === activeBookId;
+        return String(t.bookId) === String(activeBookId);
       })
       .sort((a, b) => {
         const diff = new Date(b.date || 0) - new Date(a.date || 0);
@@ -120,9 +120,9 @@ export default function Entries() {
     const allBookTx = [...transactions]
       .filter(t => {
         if (!activeBookId || activeBookId === 'book_main') {
-          return !String(t.bossNotes || '').startsWith('Auto-reflected');
+          return !t.bookId || String(t.bookId) === 'book_main';
         }
-        return t.bookId === activeBookId;
+        return String(t.bookId) === String(activeBookId);
       })
       .sort((a, b) => {
         const diff = new Date(a.date || 0) - new Date(b.date || 0);
@@ -393,7 +393,7 @@ export default function Entries() {
                     )}
                   </div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '3px' }}>
-                    {String(t.date || '—')} · {String(t.paymentMode || 'Cash')} · {getStaffName(t.user)}
+                    {t.date ? (isNaN(new Date(t.date).getTime()) ? String(t.date).split('T')[0] : new Date(t.date).toLocaleDateString()) : '—'} · {String(t.paymentMode || 'Cash')} · {getStaffName(t.user)}
                     {t.remarks && <span> · {String(t.remarks).slice(0, 30)}{String(t.remarks).length > 30 ? '…' : ''}</span>}
                   </div>
                   {t.bossNotes && (

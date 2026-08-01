@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUsers, getApiLink, setApiLink, initDb, getSettings, getApiSecret, setApiSecret } from '../services/localDb';
 import { fetchAllData } from '../services/sheetsApi';
-import { verifyPIN, APP_NAME, APP_TAGLINE } from '../services/authUtils';
+import { verifyPIN, APP_NAME, APP_TAGLINE, isAdminRole } from '../services/authUtils';
 import { Wallet, Settings, Link as LinkIcon, LogIn, Building2, ChevronDown, Plus, Trash2, Key } from 'lucide-react';
 import localforage from 'localforage';
 import { useTranslation } from 'react-i18next';
@@ -101,7 +101,7 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
     if (setSessionTimeout) setSessionTimeout(parseInt(settings.SessionTimeout || '30', 10));
 
     setAuthUser(user);
-    navigate(user.Role === 'Admin' ? '/dashboard' : '/staff-entry');
+    navigate(isAdminRole(user.Role) ? '/dashboard' : '/staff-entry');
   };
 
   // ─── Branch Management ────────────────────────────────────────────────────

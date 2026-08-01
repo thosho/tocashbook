@@ -68,16 +68,13 @@ export default function BossHome({ user, setAuthUser }) {
 
   const loadData = async () => {
     const allTrans = await getTransactions();
-    // ACCOUNTING: Main Book = General Ledger = consolidated view of ALL cashbooks.
-    // Entries with no bookId are backward-compatible (treated as Main Book).
-    // Individual sub-books show ONLY their own entries.
-    // Skip 'Auto-reflected' copies in Main Book to avoid double-counting.
+    // ACCOUNTING: Each cashbook shows ONLY its own ledger entries to maintain strict branch isolation.
+    // Entries with no bookId are backward-compatible (treated as belonging exclusively to Main Book).
     const filtered = allTrans.filter(t => {
       if (!activeBookId || activeBookId === 'book_main') {
-        // Main Book: show all, but skip auto-reflected copies (they are already counted via original)
-        return !t.bossNotes?.startsWith('Auto-reflected');
+        return !t.bookId || String(t.bookId) === 'book_main';
       }
-      return t.bookId === activeBookId;
+      return String(t.bookId) === String(activeBookId);
     });
     setTransactions(filtered);
     const s = await getSettings();
@@ -203,12 +200,12 @@ export default function BossHome({ user, setAuthUser }) {
     setInlineStaffPin('');
     setShowInlineStaffForm(false);
 
-    // BUG-H6 FIX: Show user feedback if cloud push fails, don't silently swallow error
     try {
       await pushBooks(updatedBooks);
       await pushUsers(updatedUsers);
     } catch (e) {
-      alert(`⚠️ Book "${newBookName}" was created locally but could not be synced to cloud: ${e.message}\n\nPlease press the Sync button when you have internet to push it.`);
+      console.warn(`Book "${newBookName}" created locally but cloud sync failed:`, e.message);
+      setCreateError(`⚠️ Book created locally. Cloud sync failed — sync when online.`);
     }
   };
 
@@ -300,7 +297,7 @@ export default function BossHome({ user, setAuthUser }) {
     const m = String(today.getMonth() + 1).padStart(2, '0');
     const d = String(today.getDate()).padStart(2, '0');
     const todayStr = `${y}-${m}-${d}`;
-    const todayTx = transactions.filter(t => t.date === todayStr);
+    const todayTx = transactions.filter(t => t.date && String(t.date).split('T')[0] === todayStr);
     const todayIncome = todayTx.filter(t => t.type === 'Income').reduce((a, b) => a + (b.amount || 0), 0);
     const todayExpense = todayTx.filter(t => t.type === 'Expense').reduce((a, b) => a + (b.amount || 0), 0);
     const text = `📊 *${settings.BrandName || 'Business'} — Daily Summary*\n📅 Date: ${todayStr}\n\n✅ Cash In Today: ₹${todayIncome.toLocaleString()}\n❌ Cash Out Today: ₹${todayExpense.toLocaleString()}\n💰 Net Today: ₹${(todayIncome - todayExpense).toLocaleString()}\n\n📦 Total Entries Today: ${todayTx.length}\n💰 Balance: ₹${balance.toLocaleString()}\n\n_Powered by Open Cashbook_`;
@@ -579,7 +576,7 @@ export default function BossHome({ user, setAuthUser }) {
               }}>
                 <div>
                   <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{t.category} {t.partyName ? `· ${t.partyName}` : ''}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.date} · by {t.user || '👤 Staff'}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{t.date ? (isNaN(new Date(t.date).getTime()) ? String(t.date).split('T')[0] : new Date(t.date).toLocaleDateString()) : ''} · by {t.user || '👤 Staff'}</div>
                 </div>
                 <div style={{ fontWeight: '700', color: t.type === 'Income' ? 'var(--success)' : 'var(--danger)', fontSize: '1rem' }}>
                   {t.type === 'Income' ? '+' : '-'}₹{(t.amount || 0).toLocaleString()}

@@ -46,3 +46,12 @@ export const verifyPIN = async (plainPin, storedHash) => {
 export const APP_NAME = "Open Cashbook";
 export const APP_TAGLINE = "Your financial data stays truly yours.";
 export const APP_VERSION = "v1.0";
+
+/**
+ * Case-insensitive role validation to support Admin, Boss, Owner, or lowercased variations from Sheets.
+ */
+export const isAdminRole = (role) => {
+  if (!role) return false;
+  const r = String(role).trim().toLowerCase();
+  return ['admin', 'boss', 'owner'].includes(r);
+};
