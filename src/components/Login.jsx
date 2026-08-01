@@ -56,7 +56,9 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
             success = true;
           } catch (e) {
             retries--;
-            if (retries === 0) throw new Error('Could not connect: ' + e.message + '. The setup worked, but Google is taking too long to activate the link. Please wait 1 minute and click the manual Connect button below.');
+            if (retries === 0) {
+              throw new Error('AUTH_REQUIRED');
+            }
             await new Promise(res => setTimeout(res, 3000));
           }
         }
@@ -71,6 +73,23 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
               <span>Please click the link below to allow your account to create the script, turn the switch to <b>ON</b>, and then click Automated Setup again.</span>
               <a href="https://script.google.com/home/usersettings" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 'bold', textDecoration: 'underline' }}>
                 👉 Open Apps Script Settings
+              </a>
+            </div>
+          );
+        } else if (err.message.includes('AUTH_REQUIRED')) {
+          setError(
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <strong>Script Authorization Required:</strong>
+              <span>Google requires you to authorize your new database script before it can be used.</span>
+              <ol style={{ margin: '0 0 0 20px', padding: 0 }}>
+                <li>Click the link below (opens in new tab).</li>
+                <li>Choose your Google account.</li>
+                <li>Click <b>Advanced</b> &gt; <b>Go to Open Cashbook Backend (unsafe)</b>.</li>
+                <li>Click <b>Allow</b>.</li>
+                <li>Once you see a white page with an error, close the tab and click <b>Connect to Business</b> below!</li>
+              </ol>
+              <a href={apiLinkState || '#'} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 'bold', textDecoration: 'underline', wordBreak: 'break-all' }}>
+                👉 Authorize Database Script
               </a>
             </div>
           );
