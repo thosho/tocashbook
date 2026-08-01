@@ -21,7 +21,10 @@ export async function setupGoogleBackend(accessToken) {
       mimeType: 'application/vnd.google-apps.spreadsheet',
     }),
   });
-  if (!sheetRes.ok) throw new Error('Failed to create Google Sheet');
+  if (!sheetRes.ok) {
+    const errText = await sheetRes.text();
+    throw new Error('Failed to create Google Sheet: ' + errText);
+  }
   const sheetData = await sheetRes.json();
   const spreadsheetId = sheetData.id;
 
@@ -44,7 +47,10 @@ export async function setupGoogleBackend(accessToken) {
       headers,
       body: JSON.stringify({ title: 'Open Cashbook Backend' }),
     });
-    if (!scriptRes.ok) throw new Error('Failed to create Apps Script Project');
+    if (!scriptRes.ok) {
+      const errText = await scriptRes.text();
+      throw new Error('Failed to create Apps Script Project: ' + errText);
+    }
   }
   const scriptData = await scriptRes.json();
   const scriptId = scriptData.scriptId;
