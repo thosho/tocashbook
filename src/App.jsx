@@ -10,6 +10,7 @@ import SidebarLayout from './components/SidebarLayout';
 import Entries from './components/Entries';
 import SplashScreen from './components/SplashScreen';
 import { initDb, getSettings } from './services/localDb';
+import { AppProvider } from './context/AppContext';
 import PWAPrompt from './components/PWAPrompt';
 import { isAdminRole } from './services/authUtils';
 

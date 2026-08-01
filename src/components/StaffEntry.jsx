@@ -48,6 +48,8 @@ export default function StaffEntry({ user, setAuthUser }) {
   const [imageFilename, setImageFilename] = useState('');
   const [savedEntry, setSavedEntry] = useState(null);
   const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteReason, setDeleteReason] = useState('');
   const [deleting, setDeleting] = useState(false);
   
   const [syncing, setSyncing] = useState(false);
@@ -275,25 +277,19 @@ export default function StaffEntry({ user, setAuthUser }) {
   };
 
   const handleDelete = async () => {
-    if (!editTransaction) return;
-    const reason = window.prompt('Enter reason for deletion (required):');
-    if (!reason || !reason.trim()) return;
-    if (!window.confirm(`Are you sure you want to DELETE this transaction of ₹${editTransaction.amount}? This cannot be undone.`)) return;
+    if (!editTransaction || !deleteReason.trim()) return;
     setDeleting(true);
     try {
       if (navigator.onLine) {
-        await deleteTransactionAPI(editTransaction.id, user.Name || user.Username || user.Phone, reason);
+        await deleteTransactionAPI(editTransaction.id, user.Name || user.Username || user.Phone, deleteReason);
         await deleteTransaction(editTransaction.id);
       } else {
-        // H6 FIX: Queue delete for when connection is restored
-        await deleteTransaction(editTransaction.id); // remove locally
-        await addPendingDelete(editTransaction.id, user.Name || user.Username || user.Phone, reason);
-        alert('Deleted locally. Will sync to server when internet is restored.');
+        await deleteTransaction(editTransaction.id);
+        await addPendingDelete(editTransaction.id, user.Name || user.Username || user.Phone, deleteReason);
         navigate(user.Role === 'Admin' ? '/entries' : '/staff-entry');
         setDeleting(false);
         return;
       }
-      alert('Transaction deleted successfully.');
       navigate(user.Role === 'Admin' ? '/entries' : '/staff-entry');
     } catch (e) {
       alert('Delete failed: ' + e.message);
@@ -816,18 +812,51 @@ export default function StaffEntry({ user, setAuthUser }) {
               Cancel Edit
             </button>
           )}
-          {/* Boss-only delete button */}
+          {/* Boss-only delete button with inline confirmation */}
           {editTransaction && user?.Role === 'Admin' && (
-            <button
-              type="button"
-              className="btn w-full"
-              style={{ marginTop: '8px', minHeight: '48px', background: 'rgba(239,68,68,0.1)', color: 'var(--danger)', border: '1px solid var(--danger)', gap: '8px' }}
-              onClick={handleDelete}
-              disabled={deleting}
-            >
-              <Trash2 size={18} />
-              {deleting ? 'Deleting...' : 'Delete Transaction (Boss Only)'}
-            </button>
+            !showDeleteConfirm ? (
+              <button
+                type="button"
+                className="btn w-full"
+                style={{ marginTop: '8px', minHeight: '48px', background: 'rgba(239,68,68,0.1)', color: 'var(--danger)', border: '1px solid var(--danger)', gap: '8px' }}
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                <Trash2 size={18} />
+                Delete Transaction (Boss Only)
+              </button>
+            ) : (
+              <div style={{ marginTop: '12px', padding: '16px', borderRadius: '12px', border: '1px solid var(--danger)', background: 'rgba(239,68,68,0.08)' }}>
+                <p style={{ color: 'var(--danger)', fontWeight: '600', marginBottom: '10px', fontSize: '0.9rem' }}>
+                  ⚠️ Delete ₹{Number(editTransaction.amount || 0).toLocaleString('en-IN')}? This cannot be undone.
+                </p>
+                <input
+                  type="text"
+                  placeholder="Reason for deletion (required)"
+                  value={deleteReason}
+                  onChange={e => setDeleteReason(e.target.value)}
+                  style={{ width: '100%', marginBottom: '10px', borderColor: 'var(--danger)' }}
+                />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    type="button"
+                    className="btn w-full"
+                    style={{ background: 'var(--danger)', color: '#fff', minHeight: '42px' }}
+                    onClick={handleDelete}
+                    disabled={deleting || !deleteReason.trim()}
+                  >
+                    {deleting ? 'Deleting…' : 'Confirm Delete'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline w-full"
+                    style={{ minHeight: '42px' }}
+                    onClick={() => { setShowDeleteConfirm(false); setDeleteReason(''); }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )
           )}
         </form>
       </div>
