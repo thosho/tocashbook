@@ -58,19 +58,10 @@ export async function setupGoogleBackend(accessToken) {
   // 3. Generate a secure API Secret and inject it + the Spreadsheet ID into Code.gs
   const generatedSecret = 'tcb_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   
-  // Inject the secret directly into the code
-  let modifiedCode = codeGsRaw.replace(
-    /function getSecretKey\(\) \{[\s\S]*?\}/,
-    `function getSecretKey() {\n  return '${generatedSecret}';\n}`
-  );
-  
-  // If it's a standalone script, it needs the active spreadsheet ID injected because it's not bound
-  // The current Code.gs uses SpreadsheetApp.getActiveSpreadsheet(), which only works if bound.
-  // We'll replace it to open by ID.
-  modifiedCode = modifiedCode.replace(
-    /SpreadsheetApp\.getActiveSpreadsheet\(\)/g,
-    `SpreadsheetApp.openById('${spreadsheetId}')`
-  );
+  // 4. Update the Apps Script Project with Code.gs and appsscript.json
+  const modifiedCode = codeGsRaw
+    .replace(/SpreadsheetApp\.getActiveSpreadsheet\(\)/g, `SpreadsheetApp.openById('${spreadsheetId}')`)
+    .replace(/return PropertiesService\.getScriptProperties\(\)\.getProperty\('APP_SECRET'\) \|\| '';/g, `return '${generatedSecret}';`);
 
   const manifest = {
     timeZone: 'Asia/Kolkata',
