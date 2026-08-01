@@ -7,6 +7,8 @@ import { Wallet, Settings, Link as LinkIcon, LogIn, Building2, ChevronDown, Plus
 import localforage from 'localforage';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
+import { useGoogleLogin } from '@react-oauth/google';
+import { setupGoogleBackend } from '../services/googleSetup';
 
 // Branch management helpers (stored separately from main data)
 const getBranches = async () => (await localforage.getItem('branches')) || [];
@@ -31,6 +33,29 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
 
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const handleGoogleSetup = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      setError('');
+      try {
+        const { webAppUrl, apiSecret } = await setupGoogleBackend(tokenResponse.access_token);
+        setApiLinkState(webAppUrl);
+        setApiSecretState(apiSecret);
+        
+        await setApiLink(webAppUrl);
+        await setApiSecret(apiSecret);
+        await initDb();
+        await fetchAllData();
+        setShowSetup(false);
+      } catch (err) {
+        console.error(err);
+        setError('Google Setup failed: ' + err.message);
+      }
+      setLoading(false);
+    },
+    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/script.projects https://www.googleapis.com/auth/script.deployments https://www.googleapis.com/auth/drive.file'
+  });
 
   useEffect(() => {
     initializeLogin();
@@ -247,6 +272,26 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
         {/* Setup Form */}
         {showSetup ? (
           <form onSubmit={handleSetup}>
+            <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+              <button 
+                type="button" 
+                onClick={() => handleGoogleSetup()} 
+                className="btn w-full" 
+                style={{ 
+                  background: 'white', color: '#333', minHeight: '48px', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                  border: '1px solid #ddd'
+                }} 
+                disabled={loading}
+              >
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google" />
+                Automated Setup (Sign in with Google)
+              </button>
+              <div style={{ margin: '16px 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                — OR MANUAL SETUP —
+              </div>
+            </div>
+
             <div className="input-group">
               <label>Google Apps Script API Link</label>
               <div style={{ position: 'relative' }}>

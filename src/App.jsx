@@ -13,6 +13,7 @@ import { initDb, getSettings } from './services/localDb';
 import { AppProvider } from './context/AppContext';
 import PWAPrompt from './components/PWAPrompt';
 import { isAdminRole } from './services/authUtils';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // ─── Session Persistence Helpers ──────────────────────────────────────────────
 // Use sessionStorage so session survives page refresh but clears on tab close.
@@ -167,4 +168,10 @@ function App() {
   );
 }
 
-export default App;
+export default function AppWrapper() {
+  return (
+    <GoogleOAuthProvider clientId="830225285550-9in8dfbgur29a5f0hk7hmnui14hf3vhb.apps.googleusercontent.com">
+      <App />
+    </GoogleOAuthProvider>
+  );
+}
