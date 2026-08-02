@@ -1,11 +1,13 @@
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { LayoutDashboard, PlusCircle, List, BarChart3, Settings, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import OfflineBanner from './OfflineBanner';
 import { APP_NAME, APP_VERSION } from '../services/authUtils';
 
 export default function SidebarLayout() {
   const location = useLocation();
   const currentPath = location.pathname;
+  const { t } = useTranslation();
 
   return (
     <div className="app-layout">
@@ -16,22 +18,22 @@ export default function SidebarLayout() {
         </div>
         <div className="sidebar-nav">
           <Link to="/dashboard" className={`sidebar-item ${currentPath === '/dashboard' ? 'active' : ''}`}>
-            <LayoutDashboard size={20} /> Dashboard
+            <LayoutDashboard size={20} /> {t('nav.dashboard')}
           </Link>
           <Link to="/entry" className={`sidebar-item ${currentPath === '/entry' ? 'active' : ''}`}>
-            <PlusCircle size={20} /> Add Entry
+            <PlusCircle size={20} /> {t('dashboard.add_transaction')}
           </Link>
           <Link to="/entries" className={`sidebar-item ${currentPath === '/entries' ? 'active' : ''}`}>
             <List size={20} /> Entries
           </Link>
           <Link to="/reports" className={`sidebar-item ${currentPath === '/reports' ? 'active' : ''}`}>
-            <BarChart3 size={20} /> Reports
+            <BarChart3 size={20} /> {t('nav.reports')}
           </Link>
           <Link to="/parties" className={`sidebar-item ${currentPath === '/parties' ? 'active' : ''}`}>
-            <Users size={20} /> Parties
+            <Users size={20} /> {t('nav.parties')}
           </Link>
           <Link to="/settings" className={`sidebar-item ${currentPath === '/settings' ? 'active' : ''}`}>
-            <Settings size={20} /> Settings
+            <Settings size={20} /> {t('nav.settings')}
           </Link>
         </div>
         <div className="sidebar-footer">
@@ -52,30 +54,38 @@ export default function SidebarLayout() {
       </div>
 
       {/* Mobile Bottom Nav */}
-      <div className="bottom-nav mobile-only">
+      <div className="bottom-nav mobile-only" style={{ position: 'relative' }}>
         <Link to="/dashboard" className={`bottom-nav-item ${currentPath === '/dashboard' ? 'active' : ''}`}>
           <LayoutDashboard size={22} />
-          <span>Home</span>
-        </Link>
-        <Link to="/entry" className={`bottom-nav-item ${currentPath === '/entry' ? 'active' : ''}`}>
-          <PlusCircle size={22} />
-          <span>Add Entry</span>
+          <span>{t('nav.dashboard')}</span>
         </Link>
         <Link to="/entries" className={`bottom-nav-item ${currentPath === '/entries' ? 'active' : ''}`}>
           <List size={22} />
           <span>Entries</span>
         </Link>
+        
+        {/* FAB Spacer & Button */}
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+          <div className="fab-container">
+            <Link to="/entry" className="fab-button">
+              <PlusCircle size={28} />
+            </Link>
+          </div>
+        </div>
+
         <Link to="/reports" className={`bottom-nav-item ${currentPath === '/reports' ? 'active' : ''}`}>
           <BarChart3 size={22} />
-          <span>Reports</span>
+          <span>{t('nav.reports')}</span>
         </Link>
         <Link to="/parties" className={`bottom-nav-item ${currentPath === '/parties' ? 'active' : ''}`}>
           <Users size={22} />
-          <span>Parties</span>
+          <span>{t('nav.parties')}</span>
         </Link>
+        {/* Settings is moved to a sidebar or inside dashboard on mobile, but if kept, we limit it to 4 visible items + FAB.
+            Let's keep settings as it's small enough now with reduced font-size and FAB spacing. */}
         <Link to="/settings" className={`bottom-nav-item ${currentPath === '/settings' ? 'active' : ''}`}>
           <Settings size={22} />
-          <span>Settings</span>
+          <span>{t('nav.settings')}</span>
         </Link>
       </div>
     </div>

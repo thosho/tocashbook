@@ -1,21 +1,23 @@
 import { useState, useEffect } from 'react';
 import { getUsers, saveUsers, getCategories, saveCategories, exportDatabase, importDatabase, getSettings, setSettings, getApiSecret, setApiSecret, getApiLink, setApiLink } from '../services/localDb';
 import { pushUsers, pushCategories, pushSettings } from '../services/sheetsApi';
-import { hashPIN, APP_NAME, APP_VERSION } from '../services/authUtils';
+import { hashPIN, verifyPIN, getLockoutStatus, recordFailedAttempt, resetFailedAttempts, APP_NAME, APP_VERSION } from '../services/authUtils';
 import { subscribePush, getNotificationPermission } from '../services/notificationService';
-import { Plus, Trash2, Download, Upload, Save, Sun, Moon, Monitor, Bell, BellOff, BellRing, Contact, Shield, Share2, Mail, Globe, Link2, LogOut } from 'lucide-react';
+import { Plus, Trash2, Download, Upload, Save, Sun, Moon, Monitor, Bell, BellRing, Contact, Shield, Share2, Mail, Globe, Link2, LogOut, Edit2, Check, X, AlertTriangle } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import localforage from 'localforage';
+import { deleteAppCloudData } from '../services/googleDriveApi';
 
 export default function BossSettings({ setSessionTimeout, setAuthUser }) {
   const { t } = useTranslation();
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [settings, setLocalSettings] = useState({ BrandName: '', Address: '', Phone: '', UpiId: '', DateFormat: 'MM/DD/YYYY', DarkMode: 'auto', OpeningBalance: '0', SessionTimeout: '30', NtfyTopic: '' });
+  const [settings, setLocalSettings] = useState({ BrandName: '', Address: '', Phone: '', UpiId: '', DateFormat: 'MM/DD/YYYY', DarkMode: 'auto', OpeningBalance: '0', SessionTimeout: '30', NtfyTopic: '', StaffCanSeeAllEntries: 'false', AppLockEnabled: 'false' });
   const [adminUser, setAdminUser] = useState({ phone: 'boss', pin: '' });
   const [apiLink, setApiLinkState] = useState('');
   const [apiSecret, setApiSecretState] = useState('');
@@ -25,10 +27,27 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
   const [saveMsg, setSaveMsg] = useState(null); // { type: 'success'|'warning'|'error', text: string }
   const [notifPermission, setNotifPermission] = useState('default');
   const [notifLoading, setNotifLoading] = useState(false);
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [editUserData, setEditUserData] = useState({ name: '', phone: '', pin: '' });
+  
+  // Wipe Data State
+  const [showWipeModal, setShowWipeModal] = useState(false);
+  const [wipePin, setWipePin] = useState('');
+  const [wipeError, setWipeError] = useState('');
+  const [wiping, setWiping] = useState(false);
+  const [lockoutTimer, setLockoutTimer] = useState(0);
 
   useEffect(() => {
     loadData();
     setNotifPermission(getNotificationPermission());
+    
+    const checkLockout = () => {
+      const status = getLockoutStatus();
+      setLockoutTimer(status.remainingSeconds);
+    };
+    checkLockout();
+    const interval = setInterval(checkLockout, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
@@ -43,7 +62,6 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
     setApiSecretState((await getApiSecret()) || '');
   };
 
-  // BUG FIX #12: Apply dark mode to document when setting changes
   const applyDarkMode = (mode) => {
     if (mode === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
@@ -57,8 +75,50 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
   const handleDarkModeChange = async (mode) => {
     const updated = { ...settings, DarkMode: mode };
     setLocalSettings(updated);
-    await setSettings(updated); // Persist immediately locally
+    await setSettings(updated);
     applyDarkMode(mode);
+  };
+
+  const handleWipeData = async () => {
+    if (!wipePin || lockoutTimer > 0) return;
+    setWiping(true);
+    setWipeError('');
+
+    try {
+      const bossRecord = (await getUsers()).find(u => u.Role === 'Admin');
+      if (!bossRecord) throw new Error('Admin record not found.');
+
+      const pinOk = await verifyPIN(wipePin, String(bossRecord.PIN));
+      if (!pinOk) {
+        const status = recordFailedAttempt();
+        if (status.locked) {
+          setWipeError(`Locked for ${status.remainingSeconds}s due to failed attempts.`);
+        } else {
+          setWipeError('Incorrect PIN. Please try again.');
+        }
+        setWipePin('');
+        setWiping(false);
+        return;
+      }
+
+      resetFailedAttempts();
+
+      const token = await localforage.getItem('googleAccessToken');
+      const spreadsheetId = await localforage.getItem('spreadsheetId');
+      
+      if (token && spreadsheetId) {
+        await deleteAppCloudData(token, spreadsheetId);
+      }
+
+      await localforage.clear();
+      
+      if(setAuthUser) setAuthUser(null);
+      window.location.href = '/';
+    } catch (e) {
+      console.error('Wipe data failed:', e);
+      setWipeError(e.message || 'Failed to wipe data.');
+      setWiping(false);
+    }
   };
 
   const handlePickContact = async () => {
@@ -71,11 +131,10 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
           setNewUser(prev => ({
             ...prev,
             name: c.name ? c.name[0] : '',
-            phone: c.tel ? c.tel[0].replace(/\\D/g, '') : ''
+            phone: c.tel ? c.tel[0].replace(/\D/g, '') : ''
           }));
         }
       } catch (ex) {
-        // user cancelled or error
       }
     } else {
       alert('Contact picker is not supported on this browser. Please enter manually.');
@@ -118,7 +177,6 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
           files: [new File([blob], 'card.png', { type: 'image/png' })]
         });
       } else {
-        // Fallback to download
         const link = document.createElement('a');
         link.download = `${settings.BrandName || 'Business'}_Card.png`;
         link.href = dataUrl;
@@ -147,7 +205,6 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
     const adminRecord = (await getUsers()).find(u => u.Role === 'Admin') || { ID: 'boss_1', Name: 'Admin', Role: 'Admin', IsActive: 'TRUE' };
     const allUsers = [...updated, adminRecord];
     await saveUsers(allUsers);
-    // BUG-H1 FIX: Also push to Google Sheet so staff exists on all devices
     try { await pushUsers(allUsers); } catch (e) { console.warn('Could not sync new staff to cloud:', e.message); }
   };
 
@@ -161,8 +218,40 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
     const adminRecord = (await getUsers()).find(u => u.Role === 'Admin') || { ID: 'boss_1', Name: 'Admin', Phone: 'boss', PIN: '1234', Role: 'Admin', IsActive: 'TRUE' };
     const allUsers = [...updated, adminRecord];
     await saveUsers(allUsers);
-    // BUG-H2 FIX: Push deletion to Google Sheet so staff cannot login from other devices
     try { await pushUsers(allUsers); } catch (e) { console.warn('Could not sync staff deletion to cloud:', e.message); }
+  };
+
+  const handleSaveEditUser = async () => {
+    if (!navigator.onLine) {
+      alert("⚠️ You must be online to edit staff members so accounts sync with Google Sheets!");
+      return;
+    }
+    if (!editUserData.phone || !editUserData.name) return;
+    
+    if (users.some(u => u.ID !== editingUserId && String(u.Phone || '').trim() === String(editUserData.phone).trim())) {
+      alert("⚠️ Another account with this phone number already exists!");
+      return;
+    }
+    
+    const updatedUsers = [...users];
+    const idx = updatedUsers.findIndex(u => u.ID === editingUserId);
+    if (idx !== -1) {
+      updatedUsers[idx].Name = editUserData.name;
+      updatedUsers[idx].Phone = editUserData.phone;
+      updatedUsers[idx].Username = editUserData.phone;
+      
+      if (editUserData.pin) {
+        updatedUsers[idx].PIN = await hashPIN(editUserData.pin);
+      }
+      
+      setUsers(updatedUsers);
+      const adminRecord = (await getUsers()).find(u => u.Role === 'Admin') || { ID: 'boss_1', Name: 'Admin', Role: 'Admin', IsActive: 'TRUE' };
+      const allUsers = [...updatedUsers, adminRecord];
+      await saveUsers(allUsers);
+      
+      try { await pushUsers(allUsers); } catch (e) { console.warn('Could not sync staff edit to cloud:', e.message); }
+    }
+    setEditingUserId(null);
   };
 
   const handleAddCategory = async () => {
@@ -175,17 +264,13 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
     setCategories(updated);
     setNewCategory({ name: '', type: 'Income' });
     await saveCategories(updated);
-    // BUG-H3 FIX: Push to Google Sheet so all devices see the new category
     try { await pushCategories(updated); } catch (e) { console.warn('Could not sync new category to cloud:', e.message); }
   };
 
-  // BUG FIX #12: Save categories to localforage immediately on delete
   const handleDeleteCategory = async (id) => {
-    // Robust delete (handles cases where ID might be string or number, or missing)
     const updated = categories.filter(c => String(c.ID || c.id) !== String(id));
     setCategories(updated);
-    await saveCategories(updated); // Auto-save locally immediately
-    // FIX: Also auto-sync to Sheets immediately so it doesn't reappear on refresh
+    await saveCategories(updated);
     try {
       await pushCategories(updated);
     } catch (err) {
@@ -196,28 +281,19 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
   const handleSaveAll = async () => {
     setSaving(true);
     try {
-      // 1. Users
       const adminRecord = (await getUsers()).find(u => u.Role === 'Admin') || { ID: 'boss_1', Name: 'Admin', Role: 'Admin', IsActive: 'TRUE' };
       const finalAdminPIN = adminUser.pin ? await hashPIN(adminUser.pin) : (adminRecord.PIN || '1234');
       const allUsers = [...users, { ...adminRecord, Phone: adminUser.phone, PIN: finalAdminPIN }];
       await saveUsers(allUsers);
-      
-      // 2. Categories
       await saveCategories(categories);
-      
-      // 3. Settings
       await setSettings(settings);
-      
-      // 4. API config (local only)
       await setApiLink(apiLink);
       await setApiSecret(apiSecret);
 
-      // Apply session timeout live
       if (setSessionTimeout) setSessionTimeout(parseInt(settings.SessionTimeout || '30', 10));
       
       setSaveMsg({ type: 'success', text: '✅ Settings saved locally.' });
 
-      // Try cloud sync silently
       try {
         await pushUsers(allUsers);
         await pushCategories(categories);
@@ -234,6 +310,8 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
           { Key: 'OpeningBalance', Value: settings.OpeningBalance || '0' },
           { Key: 'SessionTimeout', Value: settings.SessionTimeout || '30' },
           { Key: 'NtfyTopic', Value: settings.NtfyTopic || '' },
+          { Key: 'StaffCanSeeAllEntries', Value: settings.StaffCanSeeAllEntries || 'false' },
+          { Key: 'AppLockEnabled', Value: settings.AppLockEnabled || 'false' },
         ];
         await pushSettings(settingsArr);
         setSaveMsg({ type: 'success', text: '✅ Settings saved & synced to cloud!' });
@@ -256,7 +334,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
     const granted = await subscribePush(settings.NtfyTopic);
     setNotifPermission(getNotificationPermission());
     if (granted) {
-      alert(`✅ Notifications enabled!\n\nYou\'ll receive alerts on this device when staff add entries.\n\nMake sure the same topic ("${settings.NtfyTopic}") is saved in your Apps Script settings.`);
+      alert(`✅ Notifications enabled!\n\nYou'll receive alerts on this device when staff add entries.\n\nMake sure the same topic ("${settings.NtfyTopic}") is saved in your Apps Script settings.`);
     } else {
       alert('Notifications blocked. Please allow notifications in your browser/device settings.');
     }
@@ -282,12 +360,6 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
     }
     e.target.value = '';
   };
-
-  const darkModeOptions = [
-    { value: 'auto', icon: Monitor, label: t('settings.auto') },
-    { value: 'light', icon: Sun, label: t('settings.light') },
-    { value: 'dark', icon: Moon, label: t('settings.dark') }
-  ];
 
   return (
     <div className="container animate-fade-in pb-20">
@@ -321,7 +393,6 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
         </h3>
       </div>
 
-      {/* Appearance Settings */}
       <div className="card glass mb-4">
         <h3 style={{ marginBottom: '16px' }}>{t('settings.appearance')}</h3>
         <div 
@@ -453,7 +524,6 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
           </div>
         </div>
 
-        {/* Digital Business Card Section */}
         <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h4 style={{ margin: 0 }}>Digital Business Card</h4>
@@ -462,7 +532,6 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
             </button>
           </div>
           
-          {/* Card Preview Container */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <div 
               id="business-card" 
@@ -484,11 +553,9 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
                 border: '1px solid rgba(255,255,255,0.05)'
               }}
             >
-              {/* Modern Fintech Background Accents */}
               <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '60%', height: '140%', background: 'linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1))', transform: 'rotate(25deg)' }}></div>
               <div style={{ position: 'absolute', bottom: '-50px', left: '-50px', width: '150px', height: '150px', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)', borderRadius: '50%' }}></div>
               
-              {/* Top Section: Logo & Brand Name */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', zIndex: 1 }}>
                 {settings.Logo ? (
                   <img src={settings.Logo} alt="Logo" style={{ width: '56px', height: '56px', objectFit: 'contain', borderRadius: '12px', background: 'white', padding: '4px', boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }} />
@@ -510,7 +577,6 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
                 </div>
               </div>
               
-              {/* Bottom Section: Details Grid */}
               <div className="filter-grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px', zIndex: 1, marginTop: '20px', columnGap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {settings.Phone && (
@@ -588,6 +654,18 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
             <input type="password" placeholder="Leave empty to keep current PIN" value={adminUser.pin} onChange={e => setAdminUser({...adminUser, pin: e.target.value})} style={{ width: '100%' }} />
           </div>
         </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '12px', background: 'var(--bg-color)', borderRadius: '8px', marginTop: '16px', userSelect: 'none', border: '1px solid var(--border-color)' }} onClick={() => setLocalSettings({...settings, AppLockEnabled: settings.AppLockEnabled === 'true' ? 'false' : 'true'})}>
+          <div>
+            <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>App Lock (Require PIN to open app)</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>If enabled, you must enter your PIN every time you reopen the app.</div>
+          </div>
+          <div className="switch" style={{ pointerEvents: 'none' }}>
+            <input type="checkbox" checked={settings.AppLockEnabled === 'true'} readOnly />
+            <span className="slider round"></span>
+          </div>
+        </div>
+
         <div style={{ borderTop: '1px solid var(--border-color)', marginTop: '16px', paddingTop: '16px' }}>
           <h4 style={{ marginBottom: '12px' }}>Database Connection Settings</h4>
           <div className="input-group">
@@ -606,6 +684,18 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
 
       <div className="card glass mb-4">
         <h3 style={{ marginBottom: '16px' }}>Manage Staff</h3>
+        
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '12px', background: 'var(--bg-color)', borderRadius: '8px', marginBottom: '16px', userSelect: 'none', border: '1px solid var(--border-color)' }} onClick={() => setLocalSettings({...settings, StaffCanSeeAllEntries: settings.StaffCanSeeAllEntries === 'true' ? 'false' : 'true'})}>
+          <div>
+            <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>Staff Can View All Entries</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>If off, staff only see entries they added themselves.</div>
+          </div>
+          <div className="switch" style={{ pointerEvents: 'none' }}>
+            <input type="checkbox" checked={settings.StaffCanSeeAllEntries === 'true'} readOnly />
+            <span className="slider round"></span>
+          </div>
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
             <input type="text" placeholder="Staff Name" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} style={{ padding: '10px 14px', minHeight: '44px', borderRadius: '8px', width: '100%', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
@@ -620,12 +710,38 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {users.map(u => (
             <div key={u.ID} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', padding: '12px', background: 'var(--bg-color)', borderRadius: '8px' }}>
-              <div style={{ flex: 1, minWidth: 0, wordBreak: 'break-word' }}>
-                <strong>{u.Name || u.Username}</strong> <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', display: 'inline-block' }}>(Phone: {u.Phone || u.Username})</span>
-              </div>
-              <button onClick={() => handleDeleteUser(u.ID)} className="text-danger" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px' }}>
-                <Trash2 size={18} />
-              </button>
+              {editingUserId === u.ID ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', width: '100%', alignItems: 'center' }}>
+                  <input type="text" value={editUserData.name} onChange={e => setEditUserData({...editUserData, name: e.target.value})} style={{ flex: 1, minWidth: '120px', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface-color)', color: 'var(--text-primary)' }} placeholder="Name" />
+                  <input type="tel" value={editUserData.phone} onChange={e => setEditUserData({...editUserData, phone: e.target.value})} style={{ flex: 1, minWidth: '120px', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface-color)', color: 'var(--text-primary)' }} placeholder="Phone" />
+                  <input type="text" value={editUserData.pin} onChange={e => setEditUserData({...editUserData, pin: e.target.value})} style={{ flex: 1, minWidth: '100px', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--surface-color)', color: 'var(--text-primary)' }} placeholder="New PIN (optional)" />
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button onClick={handleSaveEditUser} className="text-success" style={{ background: 'rgba(34,197,94,0.1)', border: 'none', cursor: 'pointer', padding: '8px', borderRadius: '6px' }} title="Save">
+                      <Check size={18} />
+                    </button>
+                    <button onClick={() => setEditingUserId(null)} className="text-secondary" style={{ background: 'rgba(150,150,150,0.1)', border: 'none', cursor: 'pointer', padding: '8px', borderRadius: '6px' }} title="Cancel">
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ flex: 1, minWidth: 0, wordBreak: 'break-word' }}>
+                    <strong>{u.Name || u.Username}</strong> <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', display: 'inline-block' }}>(Phone: {u.Phone || u.Username})</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button onClick={() => {
+                      setEditingUserId(u.ID);
+                      setEditUserData({ name: u.Name || u.Username, phone: u.Phone || u.Username, pin: '' });
+                    }} className="text-primary" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px' }} title="Edit">
+                      <Edit2 size={18} />
+                    </button>
+                    <button onClick={() => handleDeleteUser(u.ID)} className="text-danger" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px' }} title="Delete">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>

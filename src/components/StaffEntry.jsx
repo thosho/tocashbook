@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { getCategories, addTransaction, getTransactions, updateTransactionLocally, addPendingEdit, addPendingDelete, getPendingCount, deleteTransaction, getBooks, addCategory, getSettings, generateTxId } from '../services/localDb';
-import { syncOfflineTransactions, syncPendingEdits, syncPendingDeletes, editTransactionAPI, deleteTransactionAPI } from '../services/sheetsApi';
+import { getCategories, addTransaction, getTransactions, updateTransactionLocally, addPendingEdit, addPendingDelete, getPendingCount, deleteTransaction, getBooks, addCategory, getSettings, generateTxId, getUsers } from '../services/localDb';
+import { syncOfflineTransactions, syncPendingEdits, syncPendingDeletes, editTransactionAPI, deleteTransactionAPI, fetchAllData } from '../services/sheetsApi';
 import { Camera, Plus, Minus, Send, RefreshCw, LogOut, Edit3, AlertCircle, Repeat, FileText, Trash2, CalendarDays, BookOpen, Share2, Download, CheckCircle, X } from 'lucide-react';
 import { jsPDF } from "jspdf";
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../context/AppContext';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -23,6 +24,7 @@ export default function StaffEntry({ user, setAuthUser }) {
   const location = useLocation();
   const editTransaction = location.state?.editTransaction || null;
   const { activeBookId, setActiveBookId } = useAppContext();
+  const { t } = useTranslation();
 
   const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -59,7 +61,22 @@ export default function StaffEntry({ user, setAuthUser }) {
   const resolvedBookIdRef = useRef(activeBookId);
 
   useEffect(() => {
-    loadData();
+    // Auto-sync on load so staff receives any updates from Boss
+    const autoSync = async () => {
+      setSyncing(true);
+      try {
+        await fetchAllData();
+        await syncOfflineTransactions();
+        await syncPendingEdits();
+        await syncPendingDeletes();
+      } catch (e) {
+        // Silent fail — just load local data if network unavailable
+      }
+      setSyncing(false);
+      loadData();
+    };
+    autoSync();
+
     if (editTransaction) {
       setType(editTransaction.type);
       setAmount(editTransaction.amount.toString());
@@ -85,6 +102,23 @@ export default function StaffEntry({ user, setAuthUser }) {
     
     const trans = await getTransactions();
     
+    // Refresh User Session
+    if (user && setAuthUser) {
+      const users = await getUsers();
+      const latestUser = users.find(u => String(u.Phone || '').trim().toLowerCase() === String(user.Phone || '').trim().toLowerCase() || String(u.Username || '').trim().toLowerCase() === String(user.Username || '').trim().toLowerCase());
+      if (latestUser) {
+        if (latestUser.IsActive === 'FALSE' || latestUser.IsActive === false) {
+          alert('Your account has been deactivated.');
+          setAuthUser(null);
+          navigate('/');
+          return;
+        }
+        if (JSON.stringify(user) !== JSON.stringify(latestUser)) {
+          setAuthUser(latestUser);
+        }
+      }
+    }
+
     // Extract unique parties for autocomplete
     const partiesMap = new Map();
     trans.forEach(t => {
@@ -112,12 +146,15 @@ export default function StaffEntry({ user, setAuthUser }) {
     // Always keep the ref in sync so handleSubmit uses correct bookId immediately
     resolvedBookIdRef.current = currentBookId;
 
-    // BUG FIX #11: Case-insensitive filter for staff's own transactions
+    // BUG FIX #11: Case-insensitive filter for staff's own transactions unless allowed to see all
+    const settings = await getSettings();
+    const canSeeAll = settings.StaffCanSeeAllEntries === 'true';
+
     setTransactions(
       trans
-        .filter(t => String(t.user || '').toLowerCase() === String(user.Name || user.Username || user.Phone || '').toLowerCase() && t.bookId === currentBookId)
+        .filter(t => (canSeeAll || String(t.user || '').toLowerCase() === String(user.Name || user.Username || user.Phone || '').toLowerCase()) && t.bookId === currentBookId)
         .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 10)
+        .slice(0, 50)
     );
 
     // Load pending count for badge
@@ -299,9 +336,14 @@ export default function StaffEntry({ user, setAuthUser }) {
 
   const handleSync = async () => {
     setSyncing(true);
-    await syncOfflineTransactions();
-    await syncPendingEdits();
-    await syncPendingDeletes(); // H6 FIX: flush queued offline deletes
+    try {
+      await fetchAllData();
+      await syncOfflineTransactions();
+      await syncPendingEdits();
+      await syncPendingDeletes(); // H6 FIX: flush queued offline deletes
+    } catch (e) {
+      alert("Sync failed: " + e.message);
+    }
     const count = await getPendingCount();
     setPendingCount(count);
     setSyncing(false);
@@ -544,7 +586,7 @@ export default function StaffEntry({ user, setAuthUser }) {
       </div>
 
       <div className="card glass mb-4">
-        <h3 style={{ marginBottom: '16px' }}>{editTransaction ? 'Update Entry' : 'Add Entry'}</h3>
+        <h3 style={{ marginBottom: '16px' }}>{editTransaction ? t('transaction.edit') : t('dashboard.add_transaction')}</h3>
         
         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
           <button 
@@ -565,7 +607,7 @@ export default function StaffEntry({ user, setAuthUser }) {
 
         <form onSubmit={handleSubmit}>
           <div className="input-group">
-            <label>Amount (₹)</label>
+            <label>{t('transaction.amount')} (₹)</label>
             <input 
               type="number" 
               step="0.01"
@@ -593,10 +635,10 @@ export default function StaffEntry({ user, setAuthUser }) {
           
           <div className="input-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <label style={{ marginBottom: 0 }}>Party / Contact Name (Optional)</label>
+              <label style={{ marginBottom: 0 }}>{t('transaction.party_name')}</label>
               {('contacts' in navigator) && (
                 <button type="button" onClick={handleContactPicker} style={{ background: 'none', border: 'none', fontSize: '0.875rem', cursor: 'pointer', color: '#3b82f6', fontWeight: '600' }}>
-                  📞 Pick Contact
+                  📞 {t('login.pick_contact')}
                 </button>
               )}
             </div>
@@ -615,7 +657,7 @@ export default function StaffEntry({ user, setAuthUser }) {
           </div>
 
           <div className="input-group">
-            <label>Party Phone (Optional)</label>
+            <label>{t('transaction.phone')}</label>
             <input 
               type="tel" 
               value={partyPhone} 
@@ -627,7 +669,7 @@ export default function StaffEntry({ user, setAuthUser }) {
           {/* Category + Payment Mode — responsive stack on mobile to prevent cropping */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', width: '100%' }}>
             <div className="input-group">
-              <label>Category</label>
+              <label>{t('transaction.category')}</label>
               <select value={category} onChange={(e) => setCategory(e.target.value)} required>
                 <option value="" disabled>Select Category</option>
                 {categories.filter(c => c.Type === type).map(c => (
@@ -638,7 +680,7 @@ export default function StaffEntry({ user, setAuthUser }) {
             </div>
             
             <div className="input-group">
-              <label>Payment Mode</label>
+              <label>{t('transaction.payment_mode')}</label>
               <select value={paymentMode} onChange={(e) => {
                 setPaymentMode(e.target.value);
                 if (e.target.value !== 'UPI') setUpiApp('');
@@ -684,7 +726,7 @@ export default function StaffEntry({ user, setAuthUser }) {
                   placeholder="Enter category name"
                   style={{ flex: 1, marginBottom: 0 }}
                 />
-                <button type="button" onClick={handleAddNewCategory} className="btn btn-primary" style={{ padding: '0 16px' }}>Add</button>
+                <button type="button" onClick={handleAddNewCategory} className="btn btn-primary" style={{ padding: '0 16px' }}>{t('transaction.save')}</button>
               </div>
             </div>
           )}
@@ -706,7 +748,7 @@ export default function StaffEntry({ user, setAuthUser }) {
 
           {paymentMode !== 'Cash' && (
             <div className="input-group animate-fade-in">
-              <label>Transaction ID / Reference (Optional)</label>
+              <label>{t('transaction.reference')}</label>
               <input 
                 type="text" 
                 value={reference} 
@@ -717,7 +759,7 @@ export default function StaffEntry({ user, setAuthUser }) {
           )}
 
           <div className="input-group">
-            <label>Remarks</label>
+            <label>{t('transaction.remarks')}</label>
             <textarea 
               value={remarks} 
               onChange={(e) => setRemarks(e.target.value)} 
@@ -729,13 +771,13 @@ export default function StaffEntry({ user, setAuthUser }) {
           {/* Recurring Expense Selector */}
           <div className="input-group">
             <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Repeat size={14} /> Recurring
+              <Repeat size={14} /> {t('transaction.recurring')}
             </label>
             <select value={recurring} onChange={e => setRecurring(e.target.value)}>
-              <option value="none">Not Recurring</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
+              <option value="none">{t('transaction.none')}</option>
+              <option value="daily">{t('transaction.daily')}</option>
+              <option value="weekly">{t('transaction.weekly')}</option>
+              <option value="monthly">{t('transaction.monthly')}</option>
             </select>
           </div>
 
@@ -756,7 +798,7 @@ export default function StaffEntry({ user, setAuthUser }) {
           )}
 
           <div className="input-group">
-            <label>Receipt / Bill (Image / PDF)</label>
+            <label>{t('transaction.receipt')}</label>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <button 
                 type="button" 

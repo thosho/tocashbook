@@ -8,10 +8,12 @@ import Reports from './components/Reports';
 import Parties from './components/Parties';
 import SidebarLayout from './components/SidebarLayout';
 import Entries from './components/Entries';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import SplashScreen from './components/SplashScreen';
 import { initDb, getSettings } from './services/localDb';
 import { AppProvider } from './context/AppContext';
 import PWAPrompt from './components/PWAPrompt';
+import AppLockScreen from './components/AppLockScreen';
 import { isAdminRole } from './services/authUtils';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useAutoTokenRefresh } from './services/tokenRefresh';
@@ -40,6 +42,9 @@ function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [sessionTimeoutMins, setSessionTimeoutMins] = useState(30);
   const sessionTimer = useRef(null);
+
+  const [isAppLocked, setIsAppLocked] = useState(false);
+  const [appLockEnabled, setAppLockEnabled] = useState(false);
 
   // ── Auto-refresh the Google OAuth token silently in the background ──────────
   // Refreshes 10 min before expiry, retries pending syncs on 401, works on
@@ -71,6 +76,13 @@ function App() {
       }
 
       setSessionTimeoutMins(parseInt(settings.SessionTimeout || '30', 10));
+      
+      const lockEnabled = settings.AppLockEnabled === 'true';
+      setAppLockEnabled(lockEnabled);
+      if (lockEnabled && loadSession()) {
+        setIsAppLocked(true);
+      }
+      
       setIsDbReady(true);
     };
     init();
@@ -121,6 +133,21 @@ function App() {
     };
   }, [authUser, resetSessionTimer]);
 
+  useEffect(() => {
+    if (!authUser || !appLockEnabled) return;
+    
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setIsAppLocked(true);
+      }
+    };
+    
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [authUser, appLockEnabled]);
+
   // Loading state (before splash screen)
   if (!isDbReady) {
     return (
@@ -141,10 +168,18 @@ function App() {
   return (
     <>
       {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
+      {isAppLocked && authUser && (
+        <AppLockScreen 
+          authUser={authUser} 
+          onUnlock={() => setIsAppLocked(false)} 
+          onLogout={() => { setIsAppLocked(false); setAuthUser(null); }} 
+        />
+      )}
       <AppProvider>
         <Router>
           <Routes>
             <Route path="/" element={<Login setAuthUser={setAuthUser} setSessionTimeout={setSessionTimeoutMins} />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
             {/* Boss Protected Routes */}
             <Route element={isAdminRole(authUser?.Role) ? <SidebarLayout /> : <Navigate to="/" />}>

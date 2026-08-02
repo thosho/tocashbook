@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getTransactions, getSettings, getBooks, getUsers, saveBooks, saveUsers, saveTransactions } from '../services/localDb';
 import { fetchAllData, syncOfflineTransactions, syncPendingEdits, syncPendingDeletes, pushUsers, pushBooks } from '../services/sheetsApi';
 import { hashPIN } from '../services/authUtils';
+import { getLockoutStatus, recordFailedAttempt, resetFailedAttempts } from '../services/authUtils';
 import { 
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, 
   LineElement, BarElement, Title, Tooltip, Legend, ArcElement 
@@ -11,6 +12,7 @@ import { LogOut, RefreshCw, ArrowUpRight, ArrowDownRight, PlusCircle, Users, Boo
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../context/AppContext';
+import { getAdaptiveStyle } from '../services/uiUtils';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend);
 
@@ -46,6 +48,17 @@ export default function BossHome({ user, setAuthUser }) {
   const [deletePin, setDeletePin] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [lockoutTimer, setLockoutTimer] = useState(0);
+
+  useEffect(() => {
+    const checkLockout = () => {
+      const status = getLockoutStatus();
+      setLockoutTimer(status.remainingSeconds);
+    };
+    checkLockout();
+    const interval = setInterval(checkLockout, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     // Auto-sync on first load so boss always sees latest staff entries from Google Sheet
@@ -71,6 +84,7 @@ export default function BossHome({ user, setAuthUser }) {
     // ACCOUNTING: Each cashbook shows ONLY its own ledger entries to maintain strict branch isolation.
     // Entries with no bookId are backward-compatible (treated as belonging exclusively to Main Book).
     const filtered = allTrans.filter(t => {
+      if (activeBookId === 'all_books') return true;
       if (!activeBookId || activeBookId === 'book_main') {
         return !t.bookId || String(t.bookId) === 'book_main';
       }
@@ -81,6 +95,21 @@ export default function BossHome({ user, setAuthUser }) {
     setSettings(s);
     const u = await getUsers();
     setUsersList(u);
+    
+    // Refresh User Session
+    if (user && setAuthUser) {
+      const bossUser = u.find(userObj => String(userObj.Phone || '').trim().toLowerCase() === String(user.Phone || '').trim().toLowerCase() || String(userObj.Username || '').trim().toLowerCase() === String(user.Username || '').trim().toLowerCase());
+      if (bossUser) {
+        if (bossUser.IsActive === 'FALSE' || bossUser.IsActive === false) {
+          alert('Your account has been deactivated.');
+          setAuthUser(null);
+          return;
+        }
+        if (JSON.stringify(user) !== JSON.stringify(bossUser)) {
+          setAuthUser(bossUser);
+        }
+      }
+    }
     const b = await getBooks();
     // BUG-M10 FIX: Case-insensitive check for 'ALL'
     if (user?.Role === 'Admin' || String(user?.AllowedBooks || '').toUpperCase() === 'ALL') {
@@ -224,8 +253,21 @@ export default function BossHome({ user, setAuthUser }) {
          (u.Phone && String(u.Phone) === String(user?.Phone || '')))
       );
       if (!bossUser) { setDeleteError('Boss account not found. Try syncing first.'); setDeleting(false); return; }
+      
       const pinOk = await verifyPIN(deletePin, String(bossUser.PIN));
-      if (!pinOk) { setDeleteError('Incorrect PIN. Please try again.'); setDeletePin(''); setDeleting(false); return; }
+      if (!pinOk) { 
+        const status = recordFailedAttempt();
+        if (status.locked) {
+          setDeleteError(`Locked for ${status.remainingSeconds}s due to failed attempts.`);
+        } else {
+          setDeleteError('Incorrect PIN. Please try again.'); 
+        }
+        setDeletePin(''); 
+        setDeleting(false); 
+        return; 
+      }
+
+      resetFailedAttempts();
 
       // 2. Handle transactions in the book
       const allTx = await getTransactions();
@@ -286,7 +328,7 @@ export default function BossHome({ user, setAuthUser }) {
   };
 
   // Calculations (Hoisted above handlers & G1 sub-book fix applied)
-  const openingBalance = (!activeBookId || activeBookId === 'book_main') ? (parseFloat(settings.OpeningBalance) || 0) : 0;
+  const openingBalance = (activeBookId === 'all_books' || !activeBookId || activeBookId === 'book_main') ? (parseFloat(settings.OpeningBalance) || 0) : 0;
   const totalIncome = transactions.filter(t => t.type === 'Income').reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const totalExpense = transactions.filter(t => t.type === 'Expense').reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const balance = openingBalance + totalIncome - totalExpense;
@@ -318,13 +360,50 @@ export default function BossHome({ user, setAuthUser }) {
     staffSummary[name].count++;
   });
 
-  // Adaptive styling logic for balance cards when digits become larger
-  const getAdaptiveStyle = (val) => {
-    const digits = String(Math.abs(Math.round(val || 0))).length;
-    if (digits >= 8) return { padding: '8px 4px', fontSize: 'clamp(0.75rem, 2.6vw, 1.05rem)' };
-    if (digits >= 6) return { padding: '9px 6px', fontSize: 'clamp(0.82rem, 3.1vw, 1.2rem)' };
-    return { padding: '10px 8px', fontSize: 'clamp(0.88rem, 3.5vw, 1.4rem)' };
+  // --- Chart Data Logic ---
+  // Expenses by Category
+  const expensesByCategory = {};
+  transactions.filter(t => t.type === 'Expense').forEach(t => {
+    const cat = t.category || 'Other';
+    expensesByCategory[cat] = (expensesByCategory[cat] || 0) + (t.amount || 0);
+  });
+  
+  const doughnutData = {
+    labels: Object.keys(expensesByCategory).length > 0 ? Object.keys(expensesByCategory) : ['No Expenses'],
+    datasets: [{
+      data: Object.values(expensesByCategory).length > 0 ? Object.values(expensesByCategory) : [1],
+      backgroundColor: Object.keys(expensesByCategory).length > 0 ? ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#f43f5e'] : ['#e2e8f0'],
+      borderWidth: 0,
+    }]
   };
+
+  // Cashflow (Last 7 Days)
+  const last7Days = Array.from({length: 7}, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().split('T')[0];
+  });
+  
+  const dailyCashIn = last7Days.map(dateStr => 
+    transactions.filter(t => t.type === 'Income' && String(t.date).startsWith(dateStr)).reduce((sum, t) => sum + (t.amount || 0), 0)
+  );
+  
+  const dailyCashOut = last7Days.map(dateStr => 
+    transactions.filter(t => t.type === 'Expense' && String(t.date).startsWith(dateStr)).reduce((sum, t) => sum + (t.amount || 0), 0)
+  );
+  
+  const lineData = {
+    labels: last7Days.map(d => {
+      const parts = d.split('-');
+      return `${parts[1]}/${parts[2]}`;
+    }),
+    datasets: [
+      { label: 'Cash In', data: dailyCashIn, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', tension: 0.4, pointRadius: 2 },
+      { label: 'Cash Out', data: dailyCashOut, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.4, pointRadius: 2 }
+    ]
+  };
+
+  // Adaptive styling logic is now imported from uiUtils.js
 
   const balStyle = getAdaptiveStyle(balance);
   const incStyle = getAdaptiveStyle(totalIncome);
@@ -385,6 +464,10 @@ export default function BossHome({ user, setAuthUser }) {
                 minWidth: '140px'
               }}
             >
+              {/* Show All Books option for Admin or users with ALL access */}
+              {(user?.Role === 'Admin' || String(user?.AllowedBooks || '').toUpperCase() === 'ALL') && (
+                <option value="all_books">All Books (Combined)</option>
+              )}
               {books.map(b => (
                 <option key={b.ID} value={b.ID}>{b.Name}</option>
               ))}
@@ -410,6 +493,44 @@ export default function BossHome({ user, setAuthUser }) {
             <ArrowDownRight size={12} className="text-danger" style={{ flexShrink: 0 }} /> {t('dashboard.cash_out')}
           </div>
           <div style={{ fontSize: expStyle.fontSize, fontWeight: 'bold', color: 'var(--danger)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{totalExpense.toFixed(0)}</div>
+        </div>
+      </div>
+
+      {/* ── Dashboard Charts ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px' }}>
+        <div className="card glass" style={{ padding: '16px' }}>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text-primary)' }}>Cashflow (Last 7 Days)</h3>
+          <div style={{ height: '180px', width: '100%' }}>
+            <Line 
+              data={lineData} 
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 10 } } } },
+                scales: { 
+                  x: { grid: { display: false }, ticks: { font: { size: 10 } } }, 
+                  y: { grid: { color: 'rgba(200, 200, 200, 0.1)' }, ticks: { font: { size: 10 } } } 
+                }
+              }} 
+            />
+          </div>
+        </div>
+        
+        <div className="card glass" style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text-primary)', alignSelf: 'flex-start' }}>Expenses by Category</h3>
+          <div style={{ height: '160px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <Doughnut 
+              data={doughnutData} 
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                  legend: { position: 'right', labels: { boxWidth: 10, padding: 8, font: { size: 10 } } } 
+                },
+                cutout: '65%'
+              }} 
+            />
+          </div>
         </div>
       </div>
 
@@ -731,8 +852,8 @@ export default function BossHome({ user, setAuthUser }) {
                   <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: `2px solid ${deleteMode === 'move' ? 'var(--primary)' : 'var(--border-color)'}`, cursor: 'pointer', background: deleteMode === 'move' ? 'rgba(79,70,229,0.06)' : 'transparent' }}>
                     <input type="radio" value="move" checked={deleteMode === 'move'} onChange={() => setDeleteMode('move')} style={{ accentColor: 'var(--primary)' }} />
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>✅ Move to Main Book (Recommended)</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>All entries are preserved in Main Book. No data lost.</div>
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>✅ Move to My Book (Recommended)</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>All entries are preserved in My Book. No data lost.</div>
                     </div>
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: `2px solid ${deleteMode === 'erase' ? 'var(--danger)' : 'var(--border-color)'}`, cursor: 'pointer', background: deleteMode === 'erase' ? 'rgba(239,68,68,0.06)' : 'transparent' }}>
@@ -756,6 +877,7 @@ export default function BossHome({ user, setAuthUser }) {
                   onChange={e => { setDeletePin(e.target.value); setDeleteError(''); }}
                   placeholder="Enter your PIN"
                   maxLength={10}
+                  disabled={lockoutTimer > 0}
                   style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: `1.5px solid ${deleteError ? 'var(--danger)' : 'var(--border-color)'}`, background: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '1.1rem', letterSpacing: '4px', fontFamily: 'monospace' }}
                   autoFocus
                 />
@@ -777,10 +899,10 @@ export default function BossHome({ user, setAuthUser }) {
                 <button
                   onClick={handleDeleteBook}
                   className="btn"
-                  style={{ flex: 1, padding: '12px', background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 600, cursor: deleting || !deletePin ? 'not-allowed' : 'pointer', opacity: deleting || !deletePin ? 0.6 : 1 }}
-                  disabled={deleting || !deletePin}
+                  style={{ flex: 1, padding: '12px', background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 600, cursor: deleting || !deletePin || lockoutTimer > 0 ? 'not-allowed' : 'pointer', opacity: deleting || !deletePin || lockoutTimer > 0 ? 0.6 : 1 }}
+                  disabled={deleting || !deletePin || lockoutTimer > 0}
                 >
-                  {deleting ? '⏳ Deleting...' : '🗑️ Delete Book'}
+                  {lockoutTimer > 0 ? `Locked (${lockoutTimer}s)` : deleting ? '⏳ Deleting...' : '🗑️ Delete Book'}
                 </button>
               </div>
             </div>

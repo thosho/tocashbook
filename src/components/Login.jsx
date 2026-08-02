@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getUsers, getApiLink, setApiLink, initDb, getSettings, getApiSecret, setApiSecret } from '../services/localDb';
 import { fetchAllData } from '../services/sheetsApi';
-import { verifyPIN, APP_NAME, APP_TAGLINE, isAdminRole } from '../services/authUtils';
+import { verifyPIN, APP_NAME, APP_TAGLINE, isAdminRole, getLockoutStatus, recordFailedAttempt, resetFailedAttempts } from '../services/authUtils';
 import { Wallet, Settings, Link as LinkIcon, LogIn, Building2, ChevronDown, Plus, Trash2, Key } from 'lucide-react';
 import localforage from 'localforage';
 import { useTranslation } from 'react-i18next';
@@ -25,6 +25,7 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [pendingAuthUrl, setPendingAuthUrl] = useState(''); // URL needing authorization
+  const [lockoutTimer, setLockoutTimer] = useState(0);
 
   // Multi-branch state
   const [branches, setBranches] = useState([]);
@@ -37,38 +38,41 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Lockout timer logic
+    const checkLockout = () => {
+      const status = getLockoutStatus();
+      setLockoutTimer(status.remainingSeconds);
+    };
+    checkLockout(); // initial check
+    const interval = setInterval(checkLockout, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const processGoogleAuth = async (accessToken) => {
     setLoading(true);
     setError('');
     try {
-      // Find existing spreadsheet OR create a new one (1 Gmail = 1 database, always)
       const { spreadsheetId, isExisting } = await setupGoogleBackend(accessToken);
-
-      // Save credentials for background sync (no Apps Script needed)
       await localforage.setItem('spreadsheetId', spreadsheetId);
       await localforage.setItem('googleAccessToken', accessToken);
       await localforage.setItem('googleTokenExpiry', Date.now() + 55 * 60 * 1000);
-      // Keep apiLink set to spreadsheetId so legacy "setup done" checks still work
       await setApiLink(spreadsheetId);
       await initDb();
 
       if (isExisting) {
-        // ✅ Reconnecting to existing database — load real data from spreadsheet
-        console.log('[Setup] Reconnecting to existing spreadsheet, loading data...');
         try {
           await fetchAllData();
         } catch (fetchErr) {
           console.warn('[Setup] Could not fetch existing data now, will sync on next open:', fetchErr.message);
-          // Seed local defaults so the app opens even if offline
           await seedLocalDefaults();
         }
       } else {
-        // 🆕 Fresh setup — seed local defaults (spreadsheet already seeded in googleSetup.js)
         await seedLocalDefaults();
       }
 
       setError('');
-      setShowSetup(false); // ✅ Done — go to login screen
+      setShowSetup(false);
     } catch (err) {
       console.error(err);
       setError('Google Setup failed: ' + err.message);
@@ -76,7 +80,6 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
     setLoading(false);
   };
 
-  // Seed local IndexedDB with safe defaults (only used for fresh installs)
   const seedLocalDefaults = async () => {
     const existingUsers = await localforage.getItem('users');
     if (!existingUsers || existingUsers.length === 0) {
@@ -95,7 +98,7 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
     }
     const existingBooks = await localforage.getItem('books');
     if (!existingBooks || existingBooks.length === 0) {
-      await localforage.setItem('books', [{ ID: 'book_main', Name: 'Main Book', Description: 'Default business ledger', CreatedAt: new Date().toISOString() }]);
+      await localforage.setItem('books', [{ ID: 'book_main', Name: 'My Book', Description: 'Default business ledger', CreatedAt: new Date().toISOString() }]);
     }
     const existingSettings = await localforage.getItem('settings');
     if (!existingSettings) {
@@ -117,14 +120,10 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
     try {
       setLoading(true);
       setError('');
-      
-      // Attempt sign in with the native plugin
       const result = await GoogleSignIn.signIn();
-      
       if (!result.accessToken) {
         throw new Error("No access token returned from Google. Ensure all scopes are permitted.");
       }
-      
       await processGoogleAuth(result.accessToken);
     } catch (err) {
       console.error("Native Google Sign-In Error:", err);
@@ -142,7 +141,6 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
   };
 
   useEffect(() => {
-    // Initialize Native Google Sign-In on mount if on Android/iOS
     if (Capacitor.isNativePlatform()) {
       GoogleSignIn.initialize({
         clientId: '830225285550-9in8dfbgur29a5f0hk7hmnui14hf3vhb.apps.googleusercontent.com',
@@ -160,14 +158,11 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
   const initializeLogin = async () => {
     const savedBranches = await getBranches();
     setBranches(savedBranches);
-
-    // Check for spreadsheetId (new architecture) or legacy apiLink
     const spreadsheetId = await localforage.getItem('spreadsheetId');
     const link = await getApiLink();
     if (!spreadsheetId && !link) {
       setShowSetup(true);
     } else {
-      // Legacy: if apiLink is set but spreadsheetId is not (old user), keep it
       if (link && !spreadsheetId) {
         setApiLinkState(link);
         const secret = await getApiSecret();
@@ -196,32 +191,40 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (lockoutTimer > 0) return;
     setError('');
     const users = await getUsers();
 
-    // If no users are set up yet, guide them to the setup screen
     if (users.length === 0) {
       setError('No account found. Please connect your Google Sheet using the "API Link" button below.');
       return;
     }
 
-    // Find user by Phone, Username, or Name (case-insensitive & safe against undefined)
     const cleanUsername = String(username).trim().toLowerCase();
     const user = users.find(u => 
       String(u.Phone || '').trim().toLowerCase() === cleanUsername ||
       String(u.Username || '').trim().toLowerCase() === cleanUsername ||
       String(u.Name || '').trim().toLowerCase() === cleanUsername
     );
-    if (!user) { setError('Invalid phone/username or PIN'); return; }
+    if (!user) { setError('Invalid username or PIN'); return; }
     if (user.IsActive === 'FALSE' || user.IsActive === false) {
       setError('Account is disabled. Contact your boss.'); return;
     }
 
-    // Verify PIN (supports both hashed and legacy plain-text)
     const pinMatch = await verifyPIN(pin, String(user.PIN));
-    if (!pinMatch) { setError('Invalid username or PIN'); setPin(''); return; } // BUG-L1 FIX: Clear PIN on fail
+    if (!pinMatch) { 
+      const status = recordFailedAttempt();
+      if (status.locked) {
+        setError(`Too many failed attempts. Locked for ${status.remainingSeconds}s`);
+      } else {
+        setError('Invalid username or PIN');
+      }
+      setPin(''); 
+      return; 
+    }
 
-    // Load session timeout from settings
+    resetFailedAttempts();
+
     const settings = await getSettings();
     if (setSessionTimeout) setSessionTimeout(parseInt(settings.SessionTimeout || '30', 10));
 
@@ -229,7 +232,6 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
     navigate(isAdminRole(user.Role) ? '/dashboard' : '/staff-entry');
   };
 
-  // ─── Branch Management ────────────────────────────────────────────────────
   const handleAddBranch = async () => {
     if (!newBranchName.trim() || !newBranchUrl.trim()) return;
     setAddingBranch(true);
@@ -258,7 +260,6 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
     setLoading(true);
     try {
       await setApiLink(branch.url);
-      // BUG-L2 FIX: Clear local transactions/users when switching branches to prevent data mixing
       await localforage.setItem('transactions', []);
       await localforage.setItem('users', []);
       await localforage.setItem('pendingSync', []);
@@ -286,8 +287,6 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
   return (
     <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', padding: '16px' }}>
       <div className="glass card animate-fade-in" style={{ width: '100%', maxWidth: '420px', padding: '36px 32px' }}>
-
-        {/* Logo */}
         <div className="text-center mb-4">
           <div style={{
             width: '64px', height: '64px', margin: '0 auto 16px',
@@ -306,12 +305,10 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
           </p>
         </div>
 
-        {/* Language Switcher */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
           <LanguageSelector />
         </div>
 
-        {/* Active Branch Indicator */}
         {!showSetup && branches.length > 0 && (
           <button
             onClick={() => setShowBranchPicker(!showBranchPicker)}
@@ -332,7 +329,6 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
           </button>
         )}
 
-        {/* Branch Picker */}
         {showBranchPicker && (
           <div className="animate-fade-in" style={{ background: 'var(--bg-color)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '12px', marginBottom: '16px' }}>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -350,7 +346,6 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
                 </div>
               ))}
             </div>
-            {/* Add new branch */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '10px', borderTop: '1px solid var(--border-color)' }}>
               <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '0 0 4px' }}>Add another branch / location:</p>
               <input value={newBranchName} onChange={e => setNewBranchName(e.target.value)} placeholder="Branch name (e.g. Main Store)" style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--surface-color)', color: 'var(--text-primary)', fontFamily: 'inherit', fontSize: '0.82rem' }} />
@@ -362,7 +357,6 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
           </div>
         )}
 
-        {/* Auth Required Card - replaces the error box */}
         {error === '__AUTH_REQUIRED__' && pendingAuthUrl ? (
           <div style={{ background: 'linear-gradient(135deg,#fff7ed,#fef3c7)', border: '2px solid #f59e0b', borderRadius: '16px', padding: '20px', marginBottom: '16px' }}>
             <p style={{ fontWeight: '700', fontSize: '1rem', margin: '0 0 8px', color: '#92400e' }}>⚡ One Final Step</p>
@@ -410,7 +404,6 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
           </div>
         ) : null}
 
-        {/* Setup Form */}
         {showSetup ? (
           <form onSubmit={handleSetup}>
             <div style={{ marginBottom: '24px', textAlign: 'center' }}>
@@ -515,9 +508,13 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
 
         <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
           Designed by{' '}
-          <a href="https://thosho.github.io/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: '600', textDecoration: 'none' }}>
+          <a href="https://thoshotech.com/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: '600', textDecoration: 'none' }}>
             Thosho Tech
           </a>
+          <br />
+          <Link to="/privacy-policy" style={{ color: 'var(--text-secondary)', textDecoration: 'underline', marginTop: '8px', display: 'inline-block' }}>
+            Privacy Policy
+          </Link>
         </p>
       </div>
     </div>

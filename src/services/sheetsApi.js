@@ -12,6 +12,7 @@ import {
   setSettings, getTransactions, getPendingEdits,
   removePendingEdit, getPendingDeletes, removePendingDelete
 } from './localDb';
+import { uploadImageToDrive } from './googleDriveApi';
 import localforage from 'localforage';
 
 // ─── Secret key (legacy Apps Script auth) ────────────────────────────────────
@@ -247,7 +248,21 @@ export const editTransactionAPI = async (transaction, editMetadata) => {
   const spreadsheetId = await getSheetsId();
   if (spreadsheetId) {
     const hdrs = await sheetsAuthHeaders();
+    const token = await getSheetsToken();
     const base = SHEETS_BASE(spreadsheetId);
+    
+    // Upload image if present
+    if (transaction.imageFile) {
+      try {
+        const url = await uploadImageToDrive(transaction.imageFile, transaction.imageFilename, token);
+        transaction.imageUrl = url;
+        delete transaction.imageFile;
+        delete transaction.imageFilename;
+      } catch (err) {
+        console.error('Image upload failed during edit:', err.message);
+      }
+    }
+    
     const rowIndex = await findTxRowIndex(transaction.id, base, hdrs);
     if (rowIndex < 0) throw new Error('Transaction not found in spreadsheet.');
     const res = await fetch(
@@ -320,7 +335,11 @@ export const syncOfflineTransactions = async () => {
   const spreadsheetId = await getSheetsId();
   if (spreadsheetId) {
     let hdrs;
-    try { hdrs = await sheetsAuthHeaders(); } catch { return; }
+    let token;
+    try { 
+      hdrs = await sheetsAuthHeaders(); 
+      token = await getSheetsToken();
+    } catch { return; }
 
     const base = SHEETS_BASE(spreadsheetId);
     const allTx = await getTransactions();
@@ -328,6 +347,17 @@ export const syncOfflineTransactions = async () => {
 
     for (const t of pending) {
       try {
+        if (t.imageFile) {
+          try {
+            const url = await uploadImageToDrive(t.imageFile, t.imageFilename, token);
+            t.imageUrl = url;
+            delete t.imageFile;
+            delete t.imageFilename;
+          } catch (err) {
+            console.error('Image upload failed during sync:', err.message);
+          }
+        }
+        
         const res = await fetch(
           `${base}/values/${encodeURIComponent('Transactions!A1')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
           { method: 'POST', headers: hdrs, body: JSON.stringify({ values: [txToRow(t)] }) }
@@ -384,12 +414,27 @@ export const syncPendingEdits = async () => {
   const spreadsheetId = await getSheetsId();
   if (spreadsheetId) {
     let hdrs;
-    try { hdrs = await sheetsAuthHeaders(); } catch { return; }
+    let token;
+    try { 
+      hdrs = await sheetsAuthHeaders(); 
+      token = await getSheetsToken();
+    } catch { return; }
     const base = SHEETS_BASE(spreadsheetId);
 
     for (const editEntry of pendingEdits) {
       try {
         const t = editEntry.transaction;
+        if (t.imageFile) {
+          try {
+            const url = await uploadImageToDrive(t.imageFile, t.imageFilename, token);
+            t.imageUrl = url;
+            delete t.imageFile;
+            delete t.imageFilename;
+          } catch (err) {
+            console.error('Image upload failed during pending edit sync:', err.message);
+          }
+        }
+        
         const rowIndex = await findTxRowIndex(t.id, base, hdrs);
         if (rowIndex < 0) { await removePendingEdit(t.id); continue; }
         const res = await fetch(

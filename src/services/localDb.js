@@ -35,7 +35,7 @@ export const initDb = async () => {
   const books = await localforage.getItem('books');
   if (!books) {
     await localforage.setItem('books', [
-      { ID: 'book_main', Name: 'Main Book', Description: 'Default business ledger', CreatedAt: new Date().toISOString() }
+      { ID: 'book_main', Name: 'My Book', Description: 'Default business ledger', CreatedAt: new Date().toISOString() }
     ]);
   }
   const pendingSync = await localforage.getItem('pendingSync');
@@ -180,7 +180,8 @@ export const addCategory = async (category) => {
 
 // --- Books ---
 export const getBooks = async () => {
-  return (await localforage.getItem('books')) || [];
+  const books = (await localforage.getItem('books')) || [];
+  return books.map(b => b.ID === 'book_main' && b.Name === 'Main Book' ? { ...b, Name: 'My Book' } : b);
 };
 
 export const saveBooks = async (books) => {
@@ -290,7 +291,9 @@ export const getSettings = async () => {
     DateFormat: 'DD/MM/YYYY',
     DarkMode: 'auto',
     OpeningBalance: '0',
-    SessionTimeout: '30'
+    SessionTimeout: '30',
+    StaffCanSeeAllEntries: 'false',
+    AppLockEnabled: 'false'
   };
 };
 

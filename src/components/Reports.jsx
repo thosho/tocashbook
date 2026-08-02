@@ -2,10 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { getTransactions, getSettings, getCategories, getUsers, getBooks } from '../services/localDb';
 import { FileText, Download, FileType, Filter, Edit3, Info, X, Image, MessageCircle, Share2, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ImageViewer from './ImageViewer';
 import { useAppContext } from '../context/AppContext';
+import { getAdaptiveFontSize } from '../services/uiUtils';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
@@ -20,6 +22,7 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarEleme
 export default function Reports() {
   const navigate = useNavigate();
   const { activeBookId } = useAppContext();
+  const { t } = useTranslation();
   const [allTransactions, setAllTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [users, setUsers] = useState([]);
@@ -587,7 +590,7 @@ export default function Reports() {
           <span style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--primary)', letterSpacing: '0.5px', textAlign: 'center', flex: '1 1 auto' }}>
             {settings.BrandName || 'Open Cashbook'}
           </span>
-          <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: '600' }}>Reports</h2>
+          <h2 style={{ fontSize: '1.25rem', margin: 0, fontWeight: '600' }}>{t('reports.reports_title')}</h2>
         </div>
       </div>
 
@@ -601,7 +604,7 @@ export default function Reports() {
             <button key={f} className={`btn ${dateFilter === f ? 'btn-primary' : 'btn-outline'}`}
               style={{ flex: '1 0 auto', minWidth: '60px', padding: '8px 10px', fontSize: '0.8rem' }}
               onClick={() => setDateFilter(f)}>
-              {f === 'daily' ? 'Today' : f === 'weekly' ? 'This Week' : f === 'monthly' ? 'Month' : f === 'yearly' ? 'Year' : f === 'all' ? 'All Time' : '📅 Custom'}
+              {f === 'daily' ? t('reports.filter_today') : f === 'weekly' ? 'This Week' : f === 'monthly' ? t('reports.filter_month') : f === 'yearly' ? 'Year' : f === 'all' ? t('reports.filter_all') : `📅 ${t('reports.filter_custom')}`}
             </button>
           ))}
         </div>
@@ -610,11 +613,11 @@ export default function Reports() {
         {dateFilter === 'custom' && (
           <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px', padding: '12px', background: 'var(--bg-color)', borderRadius: '10px' }}>
             <div className="input-group" style={{ margin: 0 }}>
-              <label style={{ fontSize: '0.78rem' }}>From Date</label>
+              <label style={{ fontSize: '0.78rem' }}>{t('reports.from')}</label>
               <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} style={{ padding: '8px', fontSize: '0.875rem' }} />
             </div>
             <div className="input-group" style={{ margin: 0 }}>
-              <label style={{ fontSize: '0.78rem' }}>To Date</label>
+              <label style={{ fontSize: '0.78rem' }}>{t('reports.to')}</label>
               <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} style={{ padding: '8px', fontSize: '0.875rem' }} />
             </div>
           </div>
@@ -683,17 +686,17 @@ export default function Reports() {
         <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', padding: '16px', backgroundColor: 'var(--bg-color)', borderRadius: '12px', marginBottom: '16px' }}>
           <div>
             <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Filtered Income</div>
-            <div className="text-success" style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>₹{totalIncome.toFixed(2)}</div>
+            <div className="text-success" style={{ fontSize: getAdaptiveFontSize(totalIncome), fontWeight: 'bold' }}>₹{totalIncome.toFixed(2)}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Filtered Expense</div>
-            <div className="text-danger" style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>₹{totalExpense.toFixed(2)}</div>
+            <div className="text-danger" style={{ fontSize: getAdaptiveFontSize(totalExpense), fontWeight: 'bold' }}>₹{totalExpense.toFixed(2)}</div>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '12px' }}>
           <button className="btn btn-primary w-full justify-center" onClick={exportPDF}>
-            <Share2 size={18} /> {Capacitor.isNativePlatform() ? 'Share PDF' : 'Export PDF'}
+            <Share2 size={18} /> {Capacitor.isNativePlatform() ? 'Share PDF' : t('reports.download_pdf')}
           </button>
           <button className="btn btn-outline w-full justify-center" onClick={exportCSV}>
             <Download size={18} /> Export CSV
@@ -824,8 +827,8 @@ export default function Reports() {
                     {t.type === 'Income' ? '+' : '-'} ₹{t.amount}
                   </div>
                   {/* Receipt image */}
-                  {t.imageUrl && (
-                    <button onClick={() => setViewImageSrc(t.imageUrl)} title="View Receipt"
+                  {(t.imageUrl || t.imageFile) && (
+                    <button onClick={() => setViewImageSrc(t.imageUrl || t.imageFile)} title="View Receipt"
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', padding: '4px', minWidth: '28px', minHeight: '28px' }}>
                       <Image size={15} />
                     </button>

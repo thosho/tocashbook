@@ -1,17 +1,20 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getTransactions, getUsers, getCategories, getSettings } from '../services/localDb';
 import { fetchAllData, syncOfflineTransactions, syncPendingEdits } from '../services/sheetsApi';
-import { List, RefreshCw, Clock, Edit3, Info, X, Search, Filter, AlertCircle, History, Share2, Download } from 'lucide-react';
+import { RefreshCw, Clock, Edit3, Info, X, Search, Filter, AlertCircle, History, Share2, Download, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../context/AppContext';
 import { jsPDF } from "jspdf";
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { getAdaptiveFontSize } from '../services/uiUtils';
 
 export default function Entries() {
   const navigate = useNavigate();
   const { activeBookId } = useAppContext();
+  const { t } = useTranslation();
   const [transactions, setTransactions] = useState([]);
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -29,6 +32,9 @@ export default function Entries() {
   const [selectedHistory, setSelectedHistory] = useState(null);
 
   useEffect(() => {
+    // Load local data immediately so it's not empty while syncing
+    loadData();
+
     // BUG-M3 FIX: Auto-sync on load so boss always sees latest entries
     const autoSync = async () => {
       setSyncing(true);
@@ -78,12 +84,13 @@ export default function Entries() {
     setSyncing(false);
   };
 
-  // ACCOUNTING: Each cashbook is strictly isolated — Main Book shows only book_main entries.
-  // Entries with no bookId are backward-compatible (treated as belonging exclusively to Main Book).
+  // ACCOUNTING: Each cashbook is strictly isolated — My Book shows only book_main entries.
+  // Entries with no bookId are backward-compatible (treated as belonging exclusively to My Book).
   const filteredTx = useMemo(() => {
     const q = String(searchQuery || '').toLowerCase().trim();
     let result = [...transactions]
       .filter(t => {
+        if (activeBookId === 'all_books') return true;
         if (!activeBookId || activeBookId === 'book_main') {
           return !t.bookId || String(t.bookId) === 'book_main';
         }
@@ -119,6 +126,7 @@ export default function Entries() {
   const runningBalance = useMemo(() => {
     const allBookTx = [...transactions]
       .filter(t => {
+        if (activeBookId === 'all_books') return true;
         if (!activeBookId || activeBookId === 'book_main') {
           return !t.bookId || String(t.bookId) === 'book_main';
         }
@@ -130,7 +138,7 @@ export default function Entries() {
         return String(a.id || '').localeCompare(String(b.id || ''));
       });
 
-    let balance = (!activeBookId || activeBookId === 'book_main') ? (parseFloat(settings?.OpeningBalance) || 0) : 0;
+    let balance = (activeBookId === 'all_books' || !activeBookId || activeBookId === 'book_main') ? (parseFloat(settings?.OpeningBalance) || 0) : 0;
     const balMap = {};
     allBookTx.forEach(t => {
       const amt = parseFloat(t.amount) || 0;
@@ -267,7 +275,7 @@ export default function Entries() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <List size={24} className="text-primary" />
             <div>
-              <h2 style={{ fontSize: '1.25rem', margin: 0 }}>All Entries</h2>
+              <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Entries</h2>
               <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                 <Clock size={11} /> {lastUpdated}
               </div>
@@ -285,7 +293,7 @@ export default function Entries() {
           <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
           <input
             type="text"
-            placeholder="Search by name, category, amount, remark..."
+            placeholder={t('parties.search')}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             style={{
@@ -305,7 +313,7 @@ export default function Entries() {
 
         {/* Filter chips */}
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', alignSelf: 'center', marginRight: '4px' }}>Type:</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', alignSelf: 'center', marginRight: '4px' }}>{t('transaction.type')}:</span>
           {['all', 'Income', 'Expense'].map(t => (
             <button key={t} onClick={() => setFilterType(t)}
               style={{
@@ -354,12 +362,12 @@ export default function Entries() {
             <div style={{ fontWeight: '700', fontSize: '1rem' }}>{filteredTx.length}</div>
           </div>
           <div className="card glass" style={{ padding: '12px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.65rem', color: 'var(--success)', marginBottom: '4px' }}>CASH IN</div>
-            <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--success)' }}>₹{(parseFloat(totalIn) || 0).toLocaleString()}</div>
+            <div style={{ fontSize: '0.65rem', color: 'var(--success)', marginBottom: '4px' }}>{t('dashboard.cash_in')?.toUpperCase() || 'CASH IN'}</div>
+            <div style={{ fontWeight: '700', fontSize: getAdaptiveFontSize(totalIn, 0.9), color: 'var(--success)' }}>₹{(parseFloat(totalIn) || 0).toLocaleString()}</div>
           </div>
           <div className="card glass" style={{ padding: '12px', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.65rem', color: 'var(--danger)', marginBottom: '4px' }}>CASH OUT</div>
-            <div style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--danger)' }}>₹{(parseFloat(totalOut) || 0).toLocaleString()}</div>
+            <div style={{ fontSize: '0.65rem', color: 'var(--danger)', marginBottom: '4px' }}>{t('dashboard.cash_out')?.toUpperCase() || 'CASH OUT'}</div>
+            <div style={{ fontWeight: '700', fontSize: getAdaptiveFontSize(totalOut, 0.9), color: 'var(--danger)' }}>₹{(parseFloat(totalOut) || 0).toLocaleString()}</div>
           </div>
         </div>
       )}

@@ -2,10 +2,19 @@ import { useState, useEffect } from 'react';
 import { getTransactions, addTransaction, generateTxId, getBooks } from '../services/localDb';
 import { syncOfflineTransactions } from '../services/sheetsApi';
 import { useAppContext } from '../context/AppContext';
-import { Users, Search, ArrowUpRight, ArrowDownRight, Plus, X, Contact, BookOpen } from 'lucide-react';
+import { Users, Search, ArrowUpRight, ArrowDownRight, Plus, X, Contact, BookOpen, MessageCircle, FileText, Download, Share2, Phone } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { getSettings } from '../services/localDb';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { getAdaptiveFontSize } from '../services/uiUtils';
 
 export default function Parties({ user }) {
   const { activeBookId, setActiveBookId } = useAppContext();
+  const { t } = useTranslation();
   const [parties, setParties] = useState([]);
   const [books, setBooks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,10 +28,16 @@ export default function Parties({ user }) {
   const [pbRemarks, setPbRemarks] = useState('');
   const [pbBookId, setPbBookId] = useState('book_main');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Party Ledger State
+  const [selectedParty, setSelectedParty] = useState(null);
+  const [partyTransactions, setPartyTransactions] = useState([]);
+  const [appSettings, setAppSettings] = useState({});
 
   useEffect(() => {
     loadBooks();
     loadParties();
+    getSettings().then(s => setAppSettings(s));
   }, [activeBookId]);
 
   const loadBooks = async () => {
@@ -53,7 +68,9 @@ export default function Parties({ user }) {
     
     // ACCOUNTING: Each book is strictly isolated to its own ledger transactions.
     // Entries with no bookId are treated as belonging exclusively to Main Book (backward compatibility).
-    const filteredTransactions = (!activeBookId || activeBookId === 'book_main')
+    const filteredTransactions = (activeBookId === 'all_books')
+      ? transactions
+      : (!activeBookId || activeBookId === 'book_main')
       ? transactions.filter(t => !t.bookId || String(t.bookId) === 'book_main')
       : transactions.filter(t => String(t.bookId) === String(activeBookId));
 
@@ -126,7 +143,7 @@ export default function Parties({ user }) {
     setPbAmount('');
     setPbType('To Get');
     setPbRemarks('');
-    setPbBookId(activeBookId || 'book_main');
+    setPbBookId(activeBookId === 'all_books' ? 'book_main' : (activeBookId || 'book_main'));
     setShowModal(true);
   };
 
@@ -137,7 +154,7 @@ export default function Parties({ user }) {
     try {
       const currentUser = user || { Name: 'Boss', Username: 'boss', Role: 'Admin' };
       const targetBookId = pbBookId || activeBookId || 'book_main';
-      const bookName = books.find(b => b.ID === targetBookId)?.Name || 'Main Book';
+      const bookName = books.find(b => b.ID === targetBookId)?.Name || 'My Book';
 
       const newTx = {
         id: generateTxId(),
@@ -174,12 +191,108 @@ export default function Parties({ user }) {
     setIsSubmitting(false);
   };
 
+  const handleOpenParty = async (party) => {
+    setSelectedParty(party);
+    const allTx = await getTransactions();
+    const filtered = allTx.filter(t => 
+      (activeBookId === 'all_books' ? true : (!activeBookId || activeBookId === 'book_main' ? (!t.bookId || String(t.bookId) === 'book_main') : String(t.bookId) === String(activeBookId))) &&
+      String(t.partyName).trim().toLowerCase() === party.name.toLowerCase()
+    ).sort((a, b) => new Date(b.date) - new Date(a.date));
+    setPartyTransactions(filtered);
+  };
+
+  const handleSendReminder = (party) => {
+    if (!party.phone) {
+      alert("Please set a phone number for this customer first by editing an entry or setting their balance.");
+      return;
+    }
+    const isToGet = party.netBalance > 0;
+    const amt = Math.abs(party.netBalance).toLocaleString();
+    let message = '';
+    if (isToGet) {
+      message = `Hello ${party.name}, your pending balance is ₹${amt} at ${appSettings.BrandName || 'our business'}. Please clear it at the earliest. Thank you!`;
+    } else {
+      message = `Hello ${party.name}, we have a pending balance of ₹${amt} to pay you from ${appSettings.BrandName || 'our business'}. We will clear it soon. Thank you!`;
+    }
+    const url = `https://wa.me/${party.phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleGeneratePDF = async (party) => {
+    try {
+      const doc = new jsPDF();
+      const brand = appSettings.BrandName || 'Open Cashbook';
+      doc.setFontSize(20);
+      doc.text(brand, 14, 22);
+      doc.setFontSize(11);
+      doc.setTextColor(100);
+      doc.text(`Statement for: ${party.name}`, 14, 30);
+      if (party.phone) doc.text(`Phone: ${party.phone}`, 14, 36);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 42);
+      
+      const netBal = party.netBalance;
+      const balText = netBal === 0 ? 'Settled' : netBal > 0 ? `To Get: Rs.${Math.abs(netBal).toLocaleString()}` : `To Give: Rs.${Math.abs(netBal).toLocaleString()}`;
+      doc.setFontSize(14);
+      doc.setTextColor(netBal > 0 ? '#16a34a' : netBal < 0 ? '#dc2626' : '#475569');
+      doc.text(`Net Balance: ${balText}`, 14, 52);
+
+      const tableColumn = ["Date", "Details", "Cash In (+)", "Cash Out (-)"];
+      const tableRows = [];
+
+      // Chronological order for the statement
+      [...partyTransactions].reverse().forEach(t => {
+        const d = t.date ? (isNaN(new Date(t.date).getTime()) ? String(t.date).split('T')[0] : new Date(t.date).toLocaleDateString()) : '';
+        const details = t.category === 'Opening Balance' ? 'Opening Balance' : (t.remarks || t.category || '');
+        const cin = t.type === 'Income' ? `Rs.${(t.amount || 0).toLocaleString()}` : '';
+        const cout = t.type === 'Expense' ? `Rs.${(t.amount || 0).toLocaleString()}` : '';
+        tableRows.push([d, details, cin, cout]);
+      });
+
+      doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 60,
+        theme: 'grid',
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [59, 130, 246] },
+        columnStyles: {
+          2: { halign: 'right', textColor: [22, 163, 74] },
+          3: { halign: 'right', textColor: [220, 38, 38] }
+        }
+      });
+
+      const pdfOutput = doc.output('datauristring');
+      
+      if (Capacitor.isNativePlatform()) {
+        const fileName = `Statement_${party.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+        const savedFile = await Filesystem.writeFile({
+          path: fileName,
+          data: pdfOutput,
+          directory: Directory.Cache
+        });
+        
+        if ((await Share.canShare()).value) {
+          await Share.share({
+            title: `${party.name} Statement`,
+            text: `Here is the ledger statement for ${party.name}`,
+            url: savedFile.uri,
+            dialogTitle: 'Share Statement'
+          });
+        }
+      } else {
+        doc.save(`Statement_${party.name.replace(/\s+/g, '_')}.pdf`);
+      }
+    } catch (err) {
+      alert('Failed to generate PDF: ' + err.message);
+    }
+  };
+
   return (
     <div className="container animate-fade-in pb-20">
       <div className="header glass" style={{ padding: '16px 20px', borderRadius: '16px', marginBottom: '20px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
         <div style={{ flex: '1 1 auto' }}>
           <h2 style={{ fontSize: '1.25rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Users size={24} className="text-primary" /> Customer Dashboard
+            <Users size={24} className="text-primary" /> {t('parties.customer_dashboard')}
           </h2>
           {/* Cashbook Selector right below Customer Dashboard heading */}
           {books.length > 0 && (
@@ -203,6 +316,10 @@ export default function Parties({ user }) {
                     minWidth: '130px'
                   }}
                 >
+                  {/* Show All Books option for Admin or users with ALL access */}
+                  {(user?.Role === 'Admin' || String(user?.AllowedBooks || '').toUpperCase() === 'ALL') && (
+                    <option value="all_books">All Books (Combined)</option>
+                  )}
                   {books.map(b => (
                     <option key={b.ID} value={b.ID}>{b.Name}</option>
                   ))}
@@ -220,23 +337,23 @@ export default function Parties({ user }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '24px' }}>
         <div className="card glass" style={{ borderBottom: '4px solid var(--success)' }}>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <ArrowUpRight size={14} /> Total Received
+            <ArrowUpRight size={14} /> {t('parties.net_received')}
           </div>
           <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--success)' }}>₹{totalCashIn.toFixed(2)}</div>
         </div>
         <div className="card glass" style={{ borderBottom: '4px solid var(--danger)' }}>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <ArrowDownRight size={14} /> Total Paid Out
+            <ArrowDownRight size={14} /> {t('parties.net_paid')}
           </div>
           <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--danger)' }}>₹{totalCashOut.toFixed(2)}</div>
         </div>
         <div className="card glass" style={{ borderBottom: '4px solid var(--primary)' }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>📥 Pending To Get</div>
-          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--primary)' }}>₹{totalToGet.toFixed(2)}</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>📥 {t('parties.you_will_get')}</div>
+          <div style={{ fontSize: getAdaptiveFontSize(totalToGet, 1.2), fontWeight: 'bold', color: 'var(--primary)' }}>₹{totalToGet.toFixed(2)}</div>
         </div>
         <div className="card glass" style={{ borderBottom: '4px solid var(--warning)' }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>📤 Pending To Give</div>
-          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--warning)' }}>₹{totalToGive.toFixed(2)}</div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>📤 {t('parties.you_will_give')}</div>
+          <div style={{ fontSize: getAdaptiveFontSize(totalToGive, 1.2), fontWeight: 'bold', color: 'var(--warning)' }}>₹{totalToGive.toFixed(2)}</div>
         </div>
       </div>
 
@@ -245,7 +362,7 @@ export default function Parties({ user }) {
         <Search size={18} className="text-secondary" />
         <input 
           type="text" 
-          placeholder="Search customer by name or phone..." 
+          placeholder={t('parties.search')} 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '1rem', color: 'var(--text-primary)' }}
@@ -260,7 +377,7 @@ export default function Parties({ user }) {
           </div>
         ) : (
           filteredParties.map(p => (
-            <div key={p.name} className="card glass" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div key={p.name} onClick={() => handleOpenParty(p)} className="card glass" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
               <div>
                 <h3 style={{ margin: '0 0 4px 0', fontSize: '1.05rem' }}>{p.name}</h3>
                 {p.phone && <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{p.phone}</p>}
@@ -274,10 +391,8 @@ export default function Parties({ user }) {
                   {p.netBalance > 0 ? '📥' : p.netBalance < 0 ? '📤' : '✅'}{' '}
                   {p.netBalance === 0 ? 'Settled' : `₹${Math.abs(p.netBalance).toFixed(2)}`}
                 </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                  <span className="text-success">Got: ₹{p.cashIn.toFixed(2)}</span>
-                  {' · '}
-                  <span className="text-danger">Gave: ₹{p.cashOut.toFixed(2)}</span>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>View Ledger</span> <ArrowUpRight size={12} />
                 </div>
               </div>
             </div>
@@ -377,13 +492,13 @@ export default function Parties({ user }) {
                   >
                     {books.map(b => (
                       <option key={b.ID} value={b.ID}>
-                        {b.Name}{b.ID === 'book_main' ? ' (Main / General Ledger)' : ''}
+                        {b.Name}{b.ID === 'book_main' ? ' (My Book / General Ledger)' : ''}
                       </option>
                     ))}
                   </select>
                   {pbBookId !== 'book_main' && (
                     <div style={{ fontSize: '0.72rem', color: 'var(--primary)', marginTop: '6px', padding: '8px 10px', background: 'rgba(79,70,229,0.08)', borderRadius: '8px', lineHeight: '1.4' }}>
-                      ✅ Entry will be saved in <strong>{books.find(b => b.ID === pbBookId)?.Name}</strong> and automatically included when viewing <strong>Main Book (General Ledger)</strong>.
+                      ✅ Entry will be saved in <strong>{books.find(b => b.ID === pbBookId)?.Name}</strong> and automatically included when viewing <strong>My Book (General Ledger)</strong>.
                     </div>
                   )}
                 </div>
@@ -404,6 +519,75 @@ export default function Parties({ user }) {
                 {isSubmitting ? 'Saving...' : '💾 Save Balance'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Party Ledger Modal */}
+      {selectedParty && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'rgba(0,0,0,0.55)', zIndex: 1000,
+          display: 'flex', justifyContent: 'center',
+          alignItems: 'flex-start',
+          overflowY: 'auto',
+          padding: '12px 12px 80px 12px'
+        }}>
+          <div className="card glass animate-fade-in" style={{ width: '100%', maxWidth: '600px', padding: '20px', borderRadius: '16px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '1.25rem', color: 'var(--primary)' }}>{selectedParty.name}</h3>
+                {selectedParty.phone && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    <Phone size={14} /> {selectedParty.phone}
+                  </div>
+                )}
+              </div>
+              <button onClick={() => setSelectedParty(null)} style={{ background: 'var(--bg-color)', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '6px', borderRadius: '50%' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ background: 'var(--bg-color)', padding: '12px', borderRadius: '10px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Net Balance</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: selectedParty.netBalance > 0 ? 'var(--success)' : selectedParty.netBalance < 0 ? 'var(--danger)' : 'var(--text-primary)' }}>
+                  {selectedParty.netBalance === 0 ? 'Settled' : `₹${Math.abs(selectedParty.netBalance).toLocaleString()}`}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  {selectedParty.netBalance > 0 ? 'To Get' : selectedParty.netBalance < 0 ? 'To Give' : ''}
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button className="btn btn-outline" onClick={() => handleGeneratePDF(selectedParty)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '0 8px' }}>
+                  <FileText size={16} /> PDF Statement
+                </button>
+                <button className="btn btn-outline" onClick={() => handleSendReminder(selectedParty)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '0 8px', color: '#25D366', borderColor: 'rgba(37, 211, 102, 0.3)' }}>
+                  <MessageCircle size={16} /> Remind
+                </button>
+              </div>
+            </div>
+
+            <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>Transactions</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '50vh', overflowY: 'auto', paddingRight: '4px' }}>
+              {partyTransactions.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px 0' }}>No transactions found.</div>
+              ) : (
+                partyTransactions.map(t => (
+                  <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderRadius: '10px', background: 'var(--bg-color)', borderLeft: `4px solid ${t.type === 'Income' ? 'var(--success)' : 'var(--danger)'}` }}>
+                    <div>
+                      <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{t.category === 'Opening Balance' ? 'Opening Balance' : (t.remarks || t.category)}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        {t.date ? (isNaN(new Date(t.date).getTime()) ? String(t.date).split('T')[0] : new Date(t.date).toLocaleDateString()) : ''} · by {t.user || 'Boss'}
+                      </div>
+                    </div>
+                    <div style={{ fontWeight: '700', color: t.type === 'Income' ? 'var(--success)' : 'var(--danger)' }}>
+                      {t.type === 'Income' ? '+' : '-'}₹{(t.amount || 0).toLocaleString()}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}

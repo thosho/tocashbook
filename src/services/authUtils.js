@@ -34,12 +34,51 @@ export const hashPIN = async (pin) => {
 export const verifyPIN = async (plainPin, storedHash) => {
   // Support legacy plain-text PINs (no hash prefix)
   // If stored value looks like a 64-char hex string, compare hashes
-  if (storedHash && storedHash.length === 64 && /^[0-9a-f]+$/.test(storedHash)) {
-    const inputHash = await hashPIN(plainPin);
-    return inputHash === storedHash;
+  if (storedHash && storedHash.length === 64 && /^[0-9a-fA-F]+$/.test(storedHash)) {
+    const hashed = await hashPIN(plainPin);
+    return hashed === storedHash;
   }
-  // Legacy fallback: plain-text comparison (will be upgraded on next save)
-  return String(plainPin) === String(storedHash);
+  return plainPin === storedHash;
+};
+
+// ─── PIN Security Lockout Logic ─────────────────────────────────────────────
+
+const LOCKOUT_KEY = 'tcb_pin_lockout';
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 60000; // 60 seconds
+
+export const getLockoutStatus = () => {
+  try {
+    const data = JSON.parse(localStorage.getItem(LOCKOUT_KEY) || '{"count":0,"lockedUntil":0}');
+    if (data.lockedUntil > Date.now()) {
+      return { locked: true, remainingSeconds: Math.ceil((data.lockedUntil - Date.now()) / 1000) };
+    }
+    return { locked: false, remainingSeconds: 0 };
+  } catch (e) {
+    return { locked: false, remainingSeconds: 0 };
+  }
+};
+
+export const recordFailedAttempt = () => {
+  try {
+    const data = JSON.parse(localStorage.getItem(LOCKOUT_KEY) || '{"count":0,"lockedUntil":0}');
+    // If we are past the lock time, reset count before incrementing
+    if (data.lockedUntil > 0 && data.lockedUntil <= Date.now()) {
+      data.count = 0;
+    }
+    data.count += 1;
+    if (data.count >= MAX_ATTEMPTS) {
+      data.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
+    }
+    localStorage.setItem(LOCKOUT_KEY, JSON.stringify(data));
+    return getLockoutStatus();
+  } catch (e) {
+    return { locked: false, remainingSeconds: 0 };
+  }
+};
+
+export const resetFailedAttempts = () => {
+  localStorage.removeItem(LOCKOUT_KEY);
 };
 
 // Global App Info — centralized so Settings, Splash, and Sidebar always match perfectly
