@@ -54,25 +54,19 @@ export default function SidebarLayout() {
       </div>
 
       {/* Mobile Bottom Nav */}
-      <div className="bottom-nav mobile-only" style={{ position: 'relative' }}>
+      <div className="bottom-nav mobile-only">
         <Link to="/dashboard" className={`bottom-nav-item ${currentPath === '/dashboard' ? 'active' : ''}`}>
           <LayoutDashboard size={22} />
           <span>{t('nav.dashboard')}</span>
+        </Link>
+        <Link to="/entry" className={`bottom-nav-item ${currentPath === '/entry' ? 'active' : ''}`}>
+          <PlusCircle size={22} />
+          <span>{t('dashboard.add_transaction')}</span>
         </Link>
         <Link to="/entries" className={`bottom-nav-item ${currentPath === '/entries' ? 'active' : ''}`}>
           <List size={22} />
           <span>Entries</span>
         </Link>
-        
-        {/* FAB Spacer & Button */}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-          <div className="fab-container">
-            <Link to="/entry" className="fab-button">
-              <PlusCircle size={28} />
-            </Link>
-          </div>
-        </div>
-
         <Link to="/reports" className={`bottom-nav-item ${currentPath === '/reports' ? 'active' : ''}`}>
           <BarChart3 size={22} />
           <span>{t('nav.reports')}</span>
@@ -81,8 +75,6 @@ export default function SidebarLayout() {
           <Users size={22} />
           <span>{t('nav.parties')}</span>
         </Link>
-        {/* Settings is moved to a sidebar or inside dashboard on mobile, but if kept, we limit it to 4 visible items + FAB.
-            Let's keep settings as it's small enough now with reduced font-size and FAB spacing. */}
         <Link to="/settings" className={`bottom-nav-item ${currentPath === '/settings' ? 'active' : ''}`}>
           <Settings size={22} />
           <span>{t('nav.settings')}</span>
