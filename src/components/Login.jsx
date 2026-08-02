@@ -8,7 +8,7 @@ import localforage from 'localforage';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
 import { useGoogleLogin } from '@react-oauth/google';
-import { setupGoogleBackend, initSpreadsheetData } from '../services/googleSetup';
+import { setupGoogleBackend } from '../services/googleSetup';
 import { Capacitor } from '@capacitor/core';
 import { GoogleSignIn } from '@capawesome/capacitor-google-sign-in';
 
@@ -41,64 +41,71 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
     setLoading(true);
     setError('');
     try {
-      const { webAppUrl, apiSecret, spreadsheetId, accessToken: setupToken } = await setupGoogleBackend(accessToken);
-      
-      // Immediately save to localforage so it survives page refresh
-      await setApiLink(webAppUrl);
-      await setApiSecret(apiSecret);
-      await initDb();
-      setApiLinkState(webAppUrl);
-      setApiSecretState(apiSecret);
-      
-      // Use Google Sheets API directly to write default data (bypasses Apps Script auth)
-      await initSpreadsheetData(spreadsheetId, setupToken);
-      
-      // ── CRITICAL: Save spreadsheetId and accessToken so background sync can use Sheets API ──
+      // Find existing spreadsheet OR create a new one (1 Gmail = 1 database, always)
+      const { spreadsheetId, isExisting } = await setupGoogleBackend(accessToken);
+
+      // Save credentials for background sync (no Apps Script needed)
       await localforage.setItem('spreadsheetId', spreadsheetId);
-      await localforage.setItem('googleAccessToken', setupToken);
-      await localforage.setItem('googleTokenExpiry', Date.now() + 55 * 60 * 1000); // ~55 min
-      
-      // Seed local database with default data — no Apps Script call needed
-      // The Apps Script will be available for future syncs once it auto-authorizes
-      const defaultUser = { Name: 'Admin', Phone: 'boss', PIN: '1234', Role: 'Admin', IsActive: 'TRUE', AllowedBooks: 'ALL' };
-      await localforage.setItem('users', [defaultUser]);
-      await localforage.setItem('transactions', []);
+      await localforage.setItem('googleAccessToken', accessToken);
+      await localforage.setItem('googleTokenExpiry', Date.now() + 55 * 60 * 1000);
+      // Keep apiLink set to spreadsheetId so legacy "setup done" checks still work
+      await setApiLink(spreadsheetId);
+      await initDb();
+
+      if (isExisting) {
+        // ✅ Reconnecting to existing database — load real data from spreadsheet
+        console.log('[Setup] Reconnecting to existing spreadsheet, loading data...');
+        try {
+          await fetchAllData();
+        } catch (fetchErr) {
+          console.warn('[Setup] Could not fetch existing data now, will sync on next open:', fetchErr.message);
+          // Seed local defaults so the app opens even if offline
+          await seedLocalDefaults();
+        }
+      } else {
+        // 🆕 Fresh setup — seed local defaults (spreadsheet already seeded in googleSetup.js)
+        await seedLocalDefaults();
+      }
+
+      setError('');
+      setShowSetup(false); // ✅ Done — go to login screen
+    } catch (err) {
+      console.error(err);
+      setError('Google Setup failed: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  // Seed local IndexedDB with safe defaults (only used for fresh installs)
+  const seedLocalDefaults = async () => {
+    const existingUsers = await localforage.getItem('users');
+    if (!existingUsers || existingUsers.length === 0) {
+      await localforage.setItem('users', [{ Name: 'Admin', Phone: 'boss', PIN: '1234', Role: 'Admin', IsActive: 'TRUE', AllowedBooks: 'ALL' }]);
+    }
+    const existingTx = await localforage.getItem('transactions');
+    if (!existingTx) await localforage.setItem('transactions', []);
+    const existingCats = await localforage.getItem('categories');
+    if (!existingCats || existingCats.length === 0) {
       await localforage.setItem('categories', [
         { ID: 'cat_1', Name: 'Salary', Type: 'Income' },
         { ID: 'cat_2', Name: 'Sales', Type: 'Income' },
         { ID: 'cat_3', Name: 'Food', Type: 'Expense' },
         { ID: 'cat_4', Name: 'Transport', Type: 'Expense' },
       ]);
-      await localforage.setItem('books', [
-        { ID: 'book_main', Name: 'Main Book', Description: 'Default business ledger', CreatedAt: new Date().toISOString() }
-      ]);
+    }
+    const existingBooks = await localforage.getItem('books');
+    if (!existingBooks || existingBooks.length === 0) {
+      await localforage.setItem('books', [{ ID: 'book_main', Name: 'Main Book', Description: 'Default business ledger', CreatedAt: new Date().toISOString() }]);
+    }
+    const existingSettings = await localforage.getItem('settings');
+    if (!existingSettings) {
       await localforage.setItem('settings', [
         { Key: 'BrandName', Value: 'My Business' },
         { Key: 'SessionTimeout', Value: '30' },
         { Key: 'DateFormat', Value: 'DD/MM/YYYY' },
         { Key: 'OpeningBalance', Value: '0' },
       ]);
-      
-      setError('');
-      setPendingAuthUrl('');
-      setShowSetup(false); // ✅ Done! Go straight to login screen
-    } catch (err) {
-      console.error(err);
-      if (err.message.includes('https://script.google.com/home/usersettings')) {
-        setError(
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <strong>Google requires one final step:</strong>
-            <span>Please click the link below to allow your account to create the script, turn the switch to <b>ON</b>, and then click Automated Setup again.</span>
-            <a href="https://script.google.com/home/usersettings" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 'bold', textDecoration: 'underline' }}>
-              👉 Open Apps Script Settings
-            </a>
-          </div>
-        );
-      } else {
-        setError('Google Setup failed: ' + err.message);
-      }
     }
-    setLoading(false);
   };
 
   const handleWebGoogleSetup = useGoogleLogin({
@@ -154,14 +161,18 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
     const savedBranches = await getBranches();
     setBranches(savedBranches);
 
+    // Check for spreadsheetId (new architecture) or legacy apiLink
+    const spreadsheetId = await localforage.getItem('spreadsheetId');
     const link = await getApiLink();
-    const secret = await getApiSecret();
-    if (!link) {
+    if (!spreadsheetId && !link) {
       setShowSetup(true);
     } else {
-      setApiLinkState(link);
-      setApiSecretState(secret || '');
-      // Find active branch from saved link
+      // Legacy: if apiLink is set but spreadsheetId is not (old user), keep it
+      if (link && !spreadsheetId) {
+        setApiLinkState(link);
+        const secret = await getApiSecret();
+        setApiSecretState(secret || '');
+      }
       const match = savedBranches.find(b => b.url === link);
       setActiveBranch(match || null);
     }
