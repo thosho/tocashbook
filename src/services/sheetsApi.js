@@ -208,8 +208,9 @@ export const syncOfflineTransactions = async () => {
           if (res.ok) {
             successIds.add(t.id);
           } else if (res.status === 401) {
-            // Token expired — stop, entries remain pending until user refreshes
-            console.warn('[Sync] Google token expired. Entries will sync after app refresh.');
+            // Token expired — signal the auto-refresh hook to get a new token
+            // The hook will refresh silently and retry pending syncs automatically
+            window.dispatchEvent(new CustomEvent('google-token-expired'));
             break;
           }
         } catch (err) {
@@ -288,6 +289,7 @@ export const syncPendingEdits = async () => {
           if (res.ok) {
             await removePendingEdit(t.id);
           } else if (res.status === 401) {
+            window.dispatchEvent(new CustomEvent('google-token-expired'));
             break; // token expired
           }
         } catch (err) {
@@ -356,6 +358,7 @@ export const syncPendingDeletes = async () => {
           if (res.ok) {
             await removePendingDelete(del.txId);
           } else if (res.status === 401) {
+            window.dispatchEvent(new CustomEvent('google-token-expired'));
             break; // token expired
           }
         } catch (err) {

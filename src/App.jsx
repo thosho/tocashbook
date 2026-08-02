@@ -14,6 +14,7 @@ import { AppProvider } from './context/AppContext';
 import PWAPrompt from './components/PWAPrompt';
 import { isAdminRole } from './services/authUtils';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { useAutoTokenRefresh } from './services/tokenRefresh';
 
 // ─── Session Persistence Helpers ──────────────────────────────────────────────
 // Use sessionStorage so session survives page refresh but clears on tab close.
@@ -39,6 +40,11 @@ function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [sessionTimeoutMins, setSessionTimeoutMins] = useState(30);
   const sessionTimer = useRef(null);
+
+  // ── Auto-refresh the Google OAuth token silently in the background ──────────
+  // Refreshes 10 min before expiry, retries pending syncs on 401, works on
+  // both web and Android without any user interaction required.
+  useAutoTokenRefresh();
 
   // Wrapper: keep sessionStorage in sync with React state
   const setAuthUser = useCallback((user) => {
