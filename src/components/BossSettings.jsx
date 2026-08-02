@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { getUsers, saveUsers, getCategories, saveCategories, exportDatabase, importDatabase, getSettings, setSettings, getApiSecret, setApiSecret, getApiLink, setApiLink } from '../services/localDb';
 import { pushUsers, pushCategories, pushSettings } from '../services/sheetsApi';
 import { hashPIN, verifyPIN, getLockoutStatus, recordFailedAttempt, resetFailedAttempts, APP_NAME, APP_VERSION } from '../services/authUtils';
-import { subscribePush, getNotificationPermission } from '../services/notificationService';
-import { Plus, Trash2, Download, Upload, Save, Sun, Moon, Monitor, Bell, BellRing, Contact, Shield, Share2, Mail, Globe, Link2, LogOut, Edit2, Check, X, AlertTriangle } from 'lucide-react';
+import { subscribePush, getNotificationPermission, requestNotificationPermission, showInstantNotification, syncAllNotificationSchedules } from '../services/notificationService';
+import { Plus, Trash2, Download, Upload, Save, Sun, Moon, Monitor, Bell, BellRing, Contact, Shield, Share2, Mail, Globe, Link2, LogOut, Edit2, Check, X, AlertTriangle, Clock, DollarSign, Calendar } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
@@ -17,7 +17,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
   const { t } = useTranslation();
   const [users, setUsers] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [settings, setLocalSettings] = useState({ BrandName: '', Address: '', Phone: '', UpiId: '', DateFormat: 'MM/DD/YYYY', DarkMode: 'auto', OpeningBalance: '0', SessionTimeout: '30', NtfyTopic: '', StaffCanSeeAllEntries: 'false', AppLockEnabled: 'false' });
+  const [settings, setLocalSettings] = useState({ BrandName: '', Address: '', Phone: '', UpiId: '', DateFormat: 'MM/DD/YYYY', DarkMode: 'auto', OpeningBalance: '0', SessionTimeout: '30', NtfyTopic: '', StaffCanSeeAllEntries: 'false', AppLockEnabled: 'false', DailyNudgeEnabled: 'false', DailyNudgeTime: '20:30', WeeklyDueAlertsEnabled: 'false', LiveStaffAlertsEnabled: 'false', LowBalanceAlertEnabled: 'false', LowBalanceThreshold: '500' });
   const [adminUser, setAdminUser] = useState({ phone: 'boss', pin: '' });
   const [apiLink, setApiLinkState] = useState('');
   const [apiSecret, setApiSecretState] = useState('');
@@ -289,6 +289,7 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
       await setSettings(settings);
       await setApiLink(apiLink);
       await setApiSecret(apiSecret);
+      await syncAllNotificationSchedules(settings);
 
       if (setSessionTimeout) setSessionTimeout(parseInt(settings.SessionTimeout || '30', 10));
       
@@ -312,6 +313,12 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
           { Key: 'NtfyTopic', Value: settings.NtfyTopic || '' },
           { Key: 'StaffCanSeeAllEntries', Value: settings.StaffCanSeeAllEntries || 'false' },
           { Key: 'AppLockEnabled', Value: settings.AppLockEnabled || 'false' },
+          { Key: 'DailyNudgeEnabled', Value: settings.DailyNudgeEnabled || 'false' },
+          { Key: 'DailyNudgeTime', Value: settings.DailyNudgeTime || '20:30' },
+          { Key: 'WeeklyDueAlertsEnabled', Value: settings.WeeklyDueAlertsEnabled || 'false' },
+          { Key: 'LiveStaffAlertsEnabled', Value: settings.LiveStaffAlertsEnabled || 'false' },
+          { Key: 'LowBalanceAlertEnabled', Value: settings.LowBalanceAlertEnabled || 'false' },
+          { Key: 'LowBalanceThreshold', Value: settings.LowBalanceThreshold || '500' },
         ];
         await pushSettings(settingsArr);
         setSaveMsg({ type: 'success', text: '✅ Settings saved & synced to cloud!' });
@@ -339,6 +346,19 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
       alert('Notifications blocked. Please allow notifications in your browser/device settings.');
     }
     setNotifLoading(false);
+  };
+
+  const handleTestNotification = async () => {
+    const granted = await requestNotificationPermission();
+    if (granted) {
+      await showInstantNotification({
+        title: "📓 Open Cashbook Alert",
+        body: "Your local Android APK notifications & reminders are active and functioning perfectly!"
+      });
+      setNotifPermission('granted');
+    } else {
+      alert('Please grant Notification permissions in your Android or Browser settings.');
+    }
   };
 
   const handleImport = (e) => {
@@ -772,56 +792,165 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
           ))}
         </div>
       </div>
-      {/* Push Notifications Card (Moved just above Data Management) */}
+      {/* Notifications & Reminders Card */}
       <div className="card glass mb-4">
-        <h3 style={{ marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Bell size={18} /> Push Notifications
+        <h3 style={{ marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontSize: '1.1rem', fontWeight: '700' }}>
+          <Bell size={20} /> Notifications & Reminders (Android & Web)
         </h3>
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-          Get alerted on your phone/browser whenever staff adds a new entry — even when the app is closed.
-          Uses <strong>ntfy.sh</strong> (free, no account needed).
+        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '18px', lineHeight: 1.4 }}>
+          Automate daily bookkeeping habits and customer collection nudges. These local alarms run silently in the background without altering any accounting logic or requiring internet.
         </p>
 
-        <div className="input-group" style={{ marginBottom: '12px' }}>
-          <label>Notification Topic Name</label>
-          <input
-            type="text"
-            value={settings.NtfyTopic || ''}
-            onChange={e => setLocalSettings({ ...settings, NtfyTopic: e.target.value.replace(/\s/g, '-') })}
-            placeholder="e.g. my-shop-alerts-2024"
-          />
-          <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Pick a unique name (no spaces). Share this same name in your Apps Script (Code.gs) as <code>NTFY_TOPIC</code>.
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        {/* Test Notification Button */}
+        <div style={{ marginBottom: '20px', padding: '12px', backgroundColor: 'rgba(79, 70, 229, 0.08)', borderRadius: '10px', border: '1px dashed var(--primary)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+          <div>
+            <div style={{ fontWeight: '600', fontSize: '0.88rem' }}>Verify Android Alarms</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Tap to test local system notifications on this device</div>
+          </div>
           <button
-            className={`btn ${notifPermission === 'granted' ? 'btn-success' : 'btn-primary'}`}
-            onClick={handleEnableNotifications}
-            disabled={notifLoading || notifPermission === 'granted'}
-            style={{ padding: '8px 16px', fontSize: '0.875rem' }}
+            className="btn btn-outline"
+            onClick={handleTestNotification}
+            style={{ padding: '6px 14px', fontSize: '0.82rem', borderColor: 'var(--primary)', color: 'var(--primary)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            {notifLoading ? 'Requesting...' : (notifPermission === 'granted' ? 'Enabled' : 'Enable on This Device')}
+            <BellRing size={16} /> Test Nudge Now
           </button>
-          
-          {notifPermission === 'granted' && (
-            <p style={{ fontSize: '0.75rem', color: 'var(--success)', margin: 0, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <BellRing size={14} /> Active
-            </p>
-          )}
-          {notifPermission === 'denied' && (
-            <p style={{ fontSize: '0.75rem', color: 'var(--danger)', margin: 0 }}>
-              Blocked in browser settings. Go to browser → Site Settings → Notifications → Allow.
-            </p>
+        </div>
+
+        {/* 1. Daily Evening Nudge */}
+        <div style={{ paddingBottom: '14px', borderBottom: '1px solid var(--border-color)', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
+            <div>
+              <span style={{ fontWeight: '600', fontSize: '0.92rem', display: 'block' }}>🌙 Daily "Close the Day" Nudge</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Evening reminder to record petty cash & reconcile your register</span>
+            </div>
+            <label className="switch" style={{ flexShrink: 0, marginTop: '2px' }}>
+              <input 
+                type="checkbox" 
+                checked={settings.DailyNudgeEnabled === 'true'} 
+                onChange={e => {
+                  const updated = { ...settings, DailyNudgeEnabled: e.target.checked ? 'true' : 'false' };
+                  setLocalSettings(updated);
+                  syncAllNotificationSchedules(updated);
+                }} 
+              />
+              <span className="slider round"></span>
+            </label>
+          </div>
+          {settings.DailyNudgeEnabled === 'true' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px', paddingLeft: '8px' }}>
+              <Clock size={16} color="var(--text-secondary)" />
+              <span style={{ fontSize: '0.82rem', fontWeight: '500' }}>Reminder Time:</span>
+              <input
+                type="time"
+                value={settings.DailyNudgeTime || '20:30'}
+                onChange={e => {
+                  const updated = { ...settings, DailyNudgeTime: e.target.value };
+                  setLocalSettings(updated);
+                  syncAllNotificationSchedules(updated);
+                }}
+                className="form-control"
+                style={{ padding: '4px 8px', fontSize: '0.85rem', width: 'auto', borderRadius: '6px' }}
+              />
+            </div>
           )}
         </div>
 
-        <div style={{ marginTop: '12px', padding: '10px 12px', background: 'var(--bg-color)', borderRadius: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-          <strong>📋 Apps Script setup:</strong> In your Code.gs, add at the top:<br />
-          <code style={{ display: 'block', marginTop: '4px', color: 'var(--primary)', wordBreak: 'break-all' }}>
-            {'const NTFY_TOPIC = "' + (settings.NtfyTopic || 'your-topic-here') + '";'}
-          </code>
+        {/* 2. Weekly Debt & Collection Reminders */}
+        <div style={{ paddingBottom: '14px', borderBottom: '1px solid var(--border-color)', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+          <div>
+            <span style={{ fontWeight: '600', fontSize: '0.92rem', display: 'block' }}>⏳ Weekly Debt Recovery Reminders</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Weekly Monday morning nudge to check pending customer receivables and send WhatsApp reminders</span>
+          </div>
+          <label className="switch" style={{ flexShrink: 0, marginTop: '2px' }}>
+            <input 
+              type="checkbox" 
+              checked={settings.WeeklyDueAlertsEnabled === 'true'} 
+              onChange={e => {
+                const updated = { ...settings, WeeklyDueAlertsEnabled: e.target.checked ? 'true' : 'false' };
+                setLocalSettings(updated);
+                syncAllNotificationSchedules(updated);
+              }} 
+            />
+            <span className="slider round"></span>
+          </label>
+        </div>
+
+        {/* 3. Low Cash Balance Warning */}
+        <div style={{ paddingBottom: '14px', borderBottom: '1px solid var(--border-color)', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
+            <div>
+              <span style={{ fontWeight: '600', fontSize: '0.92rem', display: 'block' }}>⚠️ Low Cash Balance Alarm</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Instant alert when adding an expense drops running cash below your chosen limit</span>
+            </div>
+            <label className="switch" style={{ flexShrink: 0, marginTop: '2px' }}>
+              <input 
+                type="checkbox" 
+                checked={settings.LowBalanceAlertEnabled === 'true'} 
+                onChange={e => {
+                  const updated = { ...settings, LowBalanceAlertEnabled: e.target.checked ? 'true' : 'false' };
+                  setLocalSettings(updated);
+                }} 
+              />
+              <span className="slider round"></span>
+            </label>
+          </div>
+          {settings.LowBalanceAlertEnabled === 'true' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px', paddingLeft: '8px' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: '500' }}>Alert Threshold (₹):</span>
+              <input
+                type="number"
+                value={settings.LowBalanceThreshold || '500'}
+                onChange={e => setLocalSettings({ ...settings, LowBalanceThreshold: e.target.value })}
+                className="form-control"
+                placeholder="e.g. 500"
+                style={{ padding: '4px 8px', fontSize: '0.85rem', width: '120px', borderRadius: '6px' }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* 4. Live Staff Activity Alerts (Ntfy integration) */}
+        <div>
+          <div style={{ fontWeight: '600', fontSize: '0.92rem', marginBottom: '4px' }}>💼 Real-Time Staff Activity Push Alerts</div>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+            Get push alerts on this device whenever a staff member adds an entry online. Uses free ntfy.sh messaging.
+          </p>
+
+          <div className="input-group" style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: '600' }}>Notification Topic Name</label>
+            <input
+              type="text"
+              value={settings.NtfyTopic || ''}
+              onChange={e => setLocalSettings({ ...settings, NtfyTopic: e.target.value.replace(/\s/g, '-') })}
+              placeholder="e.g. boss-shop-alerts-2024"
+              className="form-control"
+              style={{ borderRadius: '8px', padding: '8px 12px' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
+            <button
+              className={`btn ${notifPermission === 'granted' ? 'btn-success' : 'btn-primary'}`}
+              onClick={handleEnableNotifications}
+              disabled={notifLoading || notifPermission === 'granted'}
+              style={{ padding: '6px 14px', fontSize: '0.82rem' }}
+            >
+              {notifLoading ? 'Requesting...' : (notifPermission === 'granted' ? 'Topic Registered' : 'Register Topic')}
+            </button>
+            
+            {notifPermission === 'granted' && (
+              <span style={{ fontSize: '0.78rem', color: 'var(--success)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <BellRing size={14} /> Listening
+              </span>
+            )}
+          </div>
+
+          <div style={{ padding: '8px 12px', background: 'var(--bg-color)', borderRadius: '8px', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+            <strong>📋 Apps Script setup:</strong> In your Google Apps Script backend, assure your topic match:<br />
+            <code style={{ display: 'block', marginTop: '2px', color: 'var(--primary)', wordBreak: 'break-all' }}>
+              {'const NTFY_TOPIC = "' + (settings.NtfyTopic || 'your-topic-here') + '";'}
+            </code>
+          </div>
         </div>
       </div>
       

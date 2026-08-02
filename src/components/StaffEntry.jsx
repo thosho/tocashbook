@@ -9,6 +9,7 @@ import { useAppContext } from '../context/AppContext';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { checkAndNotifyLowBalance } from '../services/notificationService';
 
 // BUG FIX #10: Get today's date in LOCAL timezone (not UTC)
 const getLocalDateString = () => {
@@ -297,6 +298,18 @@ export default function StaffEntry({ user, setAuthUser }) {
       await addTransaction(newTx);
       setSavedEntry(newTx);
       
+      // Standalone Low Balance Notification Check (Non-blocking)
+      if (type === 'Expense') {
+        try {
+          const allTx = await getTransactions();
+          const bookTx = allTx.filter(t => t.bookId === newTx.bookId && t.category !== 'Opening Balance');
+          const bookIn = bookTx.filter(t => t.type === 'Income').reduce((sum, t) => sum + Number(t.amount || 0), 0);
+          const bookOut = bookTx.filter(t => t.type === 'Expense').reduce((sum, t) => sum + Number(t.amount || 0), 0);
+          const currentSettings = await getSettings();
+          await checkAndNotifyLowBalance(bookIn - bookOut, currentSettings);
+        } catch (_) {}
+      }
+
       // Reset form
       setAmount('');
       setPartyName('');

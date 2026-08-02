@@ -17,6 +17,7 @@ import AppLockScreen from './components/AppLockScreen';
 import { isAdminRole } from './services/authUtils';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useAutoTokenRefresh } from './services/tokenRefresh';
+import { syncAllNotificationSchedules } from './services/notificationService';
 
 // ─── Session Persistence Helpers ──────────────────────────────────────────────
 // Use sessionStorage so session survives page refresh but clears on tab close.
@@ -65,6 +66,7 @@ function App() {
     const init = async () => {
       await initDb();
       const settings = await getSettings();
+      syncAllNotificationSchedules(settings).catch(() => {});
 
       // Apply saved dark mode on startup
       if (settings.DarkMode === 'dark') {
