@@ -5,7 +5,7 @@ import { useAppContext } from '../context/AppContext';
 import { Users, Search, ArrowUpRight, ArrowDownRight, Plus, X, Contact, BookOpen, MessageCircle, FileText, Download, Share2, Phone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { getSettings } from '../services/localDb';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -248,7 +248,7 @@ export default function Parties({ user }) {
         tableRows.push([d, details, cin, cout]);
       });
 
-      doc.autoTable({
+      autoTable(doc, {
         head: [tableColumn],
         body: tableRows,
         startY: 60,
