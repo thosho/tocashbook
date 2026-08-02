@@ -479,28 +479,8 @@ export default function BossHome({ user, setAuthUser }) {
         )}
       </div>
 
-      {/* ── Balance Cards — adaptive padding and sizing for large numbers ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '20px' }}>
-        <div className="card glass" style={{ borderBottom: '4px solid var(--primary)', padding: balStyle.padding, minWidth: 0, transition: 'all 0.2s' }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('dashboard.net_balance')}</div>
-          <div style={{ fontSize: balStyle.fontSize, fontWeight: 'bold', color: 'var(--primary)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{balance.toFixed(0)}</div>
-        </div>
-        <div className="card glass" style={{ borderBottom: '4px solid var(--success)', padding: incStyle.padding, minWidth: 0, transition: 'all 0.2s' }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            <ArrowUpRight size={12} className="text-success" style={{ flexShrink: 0 }} /> {t('dashboard.cash_in')}
-          </div>
-          <div style={{ fontSize: incStyle.fontSize, fontWeight: 'bold', color: 'var(--success)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{totalIncome.toFixed(0)}</div>
-        </div>
-        <div className="card glass" style={{ borderBottom: '4px solid var(--danger)', padding: expStyle.padding, minWidth: 0, transition: 'all 0.2s' }}>
-          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            <ArrowDownRight size={12} className="text-danger" style={{ flexShrink: 0 }} /> {t('dashboard.cash_out')}
-          </div>
-          <div style={{ fontSize: expStyle.fontSize, fontWeight: 'bold', color: 'var(--danger)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{totalExpense.toFixed(0)}</div>
-        </div>
-      </div>
-
       {/* ── Dashboard Charts ── */}
-      <div className="card glass" style={{ marginBottom: '24px', padding: showCharts ? '16px' : '12px 16px' }}>
+      <div className="card glass" style={{ marginBottom: '20px', padding: showCharts ? '16px' : '12px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showCharts ? '16px' : '0' }}>
           <h3 style={{ fontSize: '1.05rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
             <TrendingUp size={18} className="text-primary" /> Financial Charts
@@ -548,6 +528,26 @@ export default function BossHome({ user, setAuthUser }) {
             </div>
           </div>
         )}
+      </div>
+
+      {/* ── Balance Cards — adaptive padding and sizing for large numbers ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '24px' }}>
+        <div className="card glass" style={{ borderBottom: '4px solid var(--primary)', padding: balStyle.padding, minWidth: 0, transition: 'all 0.2s' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('dashboard.net_balance')}</div>
+          <div style={{ fontSize: balStyle.fontSize, fontWeight: 'bold', color: 'var(--primary)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{balance.toFixed(0)}</div>
+        </div>
+        <div className="card glass" style={{ borderBottom: '4px solid var(--success)', padding: incStyle.padding, minWidth: 0, transition: 'all 0.2s' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <ArrowUpRight size={12} className="text-success" style={{ flexShrink: 0 }} /> {t('dashboard.cash_in')}
+          </div>
+          <div style={{ fontSize: incStyle.fontSize, fontWeight: 'bold', color: 'var(--success)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{totalIncome.toFixed(0)}</div>
+        </div>
+        <div className="card glass" style={{ borderBottom: '4px solid var(--danger)', padding: expStyle.padding, minWidth: 0, transition: 'all 0.2s' }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <ArrowDownRight size={12} className="text-danger" style={{ flexShrink: 0 }} /> {t('dashboard.cash_out')}
+          </div>
+          <div style={{ fontSize: expStyle.fontSize, fontWeight: 'bold', color: 'var(--danger)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>₹{totalExpense.toFixed(0)}</div>
+        </div>
       </div>
 
       <div style={{ marginBottom: '24px' }}>
@@ -687,12 +687,9 @@ export default function BossHome({ user, setAuthUser }) {
           <h3 style={{ fontSize: '1.05rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>
             📋 Recent Entries
           </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
-            <button className="btn btn-outline" style={{ padding: '4px 12px', fontSize: '0.78rem', minWidth: '78px', textAlign: 'center' }} onClick={() => setShowRecentEntries(!showRecentEntries)}>
-              {showRecentEntries ? 'Hide' : 'View All'}
-            </button>
-            <Link to="/entries" style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: '700', letterSpacing: '0.2px' }}>Full List →</Link>
-          </div>
+          <button className="btn btn-outline" style={{ padding: '5px 12px', fontSize: '0.78rem' }} onClick={() => setShowRecentEntries(!showRecentEntries)}>
+            {showRecentEntries ? 'Hide' : 'View All'}
+          </button>
         </div>
         {showRecentEntries && (
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
