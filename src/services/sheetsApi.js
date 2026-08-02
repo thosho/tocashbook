@@ -14,7 +14,6 @@ export const setSecret = async (secret) => {
 };
 
 // ─── C5 FIX: Fetch with 15-second timeout ────────────────────────────────────
-// Prevents the app from hanging forever if Google's servers are slow.
 const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -29,6 +28,36 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
     }
     throw err;
   }
+};
+
+// ─── Sheets API Direct Write Helpers ─────────────────────────────────────────
+// These bypass Apps Script entirely using the stored OAuth token from setup.
+const getSheetsToken = async () => localforage.getItem('googleAccessToken');
+const getSheetsId = async () => localforage.getItem('spreadsheetId');
+
+const sheetsAuthHeaders = async () => {
+  const token = await getSheetsToken();
+  if (!token) throw new Error('No Google token stored. Please run Automated Setup again.');
+  return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+};
+
+// Find which spreadsheet row a transaction ID is in (returns 1-based row number)
+const findTxRowIndex = async (txId, sheetsBase, hdrs) => {
+  const res = await fetch(`${sheetsBase}/values/Transactions!A:A`, { headers: hdrs });
+  const data = await res.json();
+  const vals = data.values || [];
+  for (let i = 1; i < vals.length; i++) { // skip row 1 (header)
+    if (vals[i][0] === txId) return i + 1; // 1-based
+  }
+  return -1;
+};
+
+// Get the numeric sheetId for the Transactions sheet (needed for row deletion)
+const getTxSheetId = async (sheetsBase, hdrs) => {
+  const res = await fetch(`${sheetsBase}?fields=sheets.properties`, { headers: hdrs });
+  const info = await res.json();
+  const sheet = (info.sheets || []).find(s => s.properties.title === 'Transactions');
+  return sheet ? sheet.properties.sheetId : 0;
 };
 
 // ─── Fetch All Data from Google Sheets ───────────────────────────────────────
@@ -145,20 +174,65 @@ export const editTransactionAPI = async (transaction, editMetadata) => {
   }
 };
 
-// ─── H2 FIX: Sync Pending New Transactions — one by one to handle partial failures
-// Previously sent all as a batch; if server failed midway, ALL would be retried
-// causing duplicates. Now each succeeds or fails independently.
+// ─── H2 FIX: Sync Pending New Transactions via Sheets API directly ───────────
+// Writes new transaction rows to Google Sheets using the stored OAuth token,
+// completely bypassing the Apps Script authorization requirement.
 export const syncOfflineTransactions = async () => {
   if (!navigator.onLine) return;
-  const apiLink = await getApiLink();
-  if (!apiLink) return;
-  
   const pending = await getPendingSync();
   if (pending.length === 0) return;
 
+  // Prefer Sheets API (works immediately after setup, no auth step needed)
+  const spreadsheetId = await getSheetsId();
+  if (spreadsheetId) {
+    let hdrs;
+    try { hdrs = await sheetsAuthHeaders(); } catch { /* fall through to Apps Script */ }
+    
+    if (hdrs) {
+      const sheetsBase = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
+      const allTx = await getTransactions();
+      const successIds = new Set();
+
+      for (const t of pending) {
+        try {
+          const row = [
+            t.id, new Date().toISOString(), t.date, t.type, t.category || '',
+            t.partyName || '', t.partyPhone || '', t.amount, t.paymentMode || 'Cash',
+            t.reference || '', t.remarks || '', t.user || '', t.imageUrl || '',
+            '', t.bossNotes || '', t.recurring || 'none', t.bookId || 'book_main', t.upiApp || ''
+          ];
+          const res = await fetch(
+            `${sheetsBase}/values/Transactions!A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+            { method: 'POST', headers: hdrs, body: JSON.stringify({ values: [row] }) }
+          );
+          if (res.ok) {
+            successIds.add(t.id);
+          } else if (res.status === 401) {
+            // Token expired — stop, entries remain pending until user refreshes
+            console.warn('[Sync] Google token expired. Entries will sync after app refresh.');
+            break;
+          }
+        } catch (err) {
+          console.error('[Sync] Error syncing tx via Sheets API:', t.id, err.message);
+          break;
+        }
+      }
+
+      if (successIds.size > 0) {
+        const remaining = pending.filter(t => !successIds.has(t.id));
+        await localforage.setItem('pendingSync', remaining);
+        const updated = allTx.map(t => successIds.has(t.id) ? { ...t, synced: true } : t);
+        await localforage.setItem('transactions', updated);
+      }
+      return; // Done via Sheets API
+    }
+  }
+
+  // Fallback: Apps Script (only runs if Sheets API token not available)
+  const apiLink = await getApiLink();
+  if (!apiLink) return;
   const allTx = await getTransactions();
   const successIds = new Set();
-
   for (const t of pending) {
     try {
       const secret = await getSecret();
@@ -167,87 +241,149 @@ export const syncOfflineTransactions = async () => {
         body: JSON.stringify({ action: 'sync_transactions', secret, transactions: [t] })
       });
       const result = await response.json();
-      if (result.status === 'success') {
-        successIds.add(t.id);
-      }
+      if (result.status === 'success') successIds.add(t.id);
     } catch (error) {
-      // Network error — stop syncing but keep remaining in queue
-      console.error("Failed to sync tx:", t.id, error.message);
+      console.error('[Sync] Apps Script fallback failed:', t.id, error.message);
       break;
     }
   }
-
   if (successIds.size > 0) {
-    // Remove only successfully synced ones from the pending queue
     const remaining = pending.filter(t => !successIds.has(t.id));
     await localforage.setItem('pendingSync', remaining);
-
-    // Mark them as synced in local db
     const updated = allTx.map(t => successIds.has(t.id) ? { ...t, synced: true } : t);
     await localforage.setItem('transactions', updated);
   }
 };
 
-// ─── Sync Pending Edits (offline edits queue) ─────────────────────────────────
+// ─── Sync Pending Edits via Sheets API directly ───────────────────────────────
 export const syncPendingEdits = async () => {
   if (!navigator.onLine) return;
-  const apiLink = await getApiLink();
-  if (!apiLink) return;
-  
   const pendingEdits = await getPendingEdits();
   if (pendingEdits.length === 0) return;
-  
+
+  const spreadsheetId = await getSheetsId();
+  if (spreadsheetId) {
+    let hdrs;
+    try { hdrs = await sheetsAuthHeaders(); } catch { /* fall through */ }
+
+    if (hdrs) {
+      const sheetsBase = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
+      for (const editEntry of pendingEdits) {
+        try {
+          const t = editEntry.transaction;
+          const rowIndex = await findTxRowIndex(t.id, sheetsBase, hdrs);
+          if (rowIndex < 0) { await removePendingEdit(t.id); continue; }
+
+          const row = [
+            t.id, new Date().toISOString(), t.date, t.type, t.category || '',
+            t.partyName || '', t.partyPhone || '', t.amount, t.paymentMode || 'Cash',
+            t.reference || '', t.remarks || '', t.user || '', t.imageUrl || '',
+            JSON.stringify(t.editHistory || []), t.bossNotes || '',
+            t.recurring || 'none', t.bookId || 'book_main', t.upiApp || ''
+          ];
+          const res = await fetch(
+            `${sheetsBase}/values/Transactions!A${rowIndex}:R${rowIndex}?valueInputOption=RAW`,
+            { method: 'PUT', headers: hdrs, body: JSON.stringify({ values: [row] }) }
+          );
+          if (res.ok) {
+            await removePendingEdit(t.id);
+          } else if (res.status === 401) {
+            break; // token expired
+          }
+        } catch (err) {
+          console.error('[Sync] Edit sync error:', err.message);
+          break;
+        }
+      }
+      return;
+    }
+  }
+
+  // Fallback: Apps Script
+  const apiLink = await getApiLink();
+  if (!apiLink) return;
   for (const editEntry of pendingEdits) {
     try {
       const secret = await getSecret();
       const response = await fetchWithTimeout(apiLink, {
         method: 'POST',
         body: JSON.stringify({
-          action: 'edit_transaction',
-          secret,
+          action: 'edit_transaction', secret,
           transaction: editEntry.transaction,
           editMetadata: editEntry.editMetadata
         })
       });
       const result = await response.json();
-      if (result.status === 'success') {
-        await removePendingEdit(editEntry.transaction.id);
-      }
+      if (result.status === 'success') await removePendingEdit(editEntry.transaction.id);
     } catch (error) {
-      console.error("Failed to sync edit for tx:", editEntry.transaction.id, error.message);
-      break; // Stop syncing edits if connection fails
+      console.error('[Sync] Apps Script edit fallback failed:', error.message);
+      break;
     }
   }
 };
 
-// ─── H6 FIX: Sync Pending Deletes (offline deletions) ────────────────────────
+// ─── H6 FIX: Sync Pending Deletes via Sheets API directly ────────────────────
 export const syncPendingDeletes = async () => {
   if (!navigator.onLine) return;
-  const apiLink = await getApiLink();
-  if (!apiLink) return;
-
   const pendingDeletes = await getPendingDeletes();
   if (pendingDeletes.length === 0) return;
 
+  const spreadsheetId = await getSheetsId();
+  if (spreadsheetId) {
+    let hdrs;
+    try { hdrs = await sheetsAuthHeaders(); } catch { /* fall through */ }
+
+    if (hdrs) {
+      const sheetsBase = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
+      const txSheetId = await getTxSheetId(sheetsBase, hdrs);
+
+      // Process in reverse order so row indexes don't shift during deletion
+      const sorted = [...pendingDeletes].reverse();
+      for (const del of sorted) {
+        try {
+          const rowIndex = await findTxRowIndex(del.txId, sheetsBase, hdrs);
+          if (rowIndex < 0) { await removePendingDelete(del.txId); continue; }
+
+          const res = await fetch(`${sheetsBase}:batchUpdate`, {
+            method: 'POST', headers: hdrs,
+            body: JSON.stringify({
+              requests: [{ deleteDimension: { range: {
+                sheetId: txSheetId, dimension: 'ROWS',
+                startIndex: rowIndex - 1, endIndex: rowIndex
+              }}}]
+            })
+          });
+          if (res.ok) {
+            await removePendingDelete(del.txId);
+          } else if (res.status === 401) {
+            break; // token expired
+          }
+        } catch (err) {
+          console.error('[Sync] Delete sync error:', err.message);
+          break;
+        }
+      }
+      return;
+    }
+  }
+
+  // Fallback: Apps Script
+  const apiLink = await getApiLink();
+  if (!apiLink) return;
   for (const del of pendingDeletes) {
     try {
       const secret = await getSecret();
       const response = await fetchWithTimeout(apiLink, {
         method: 'POST',
         body: JSON.stringify({
-          action: 'delete_transaction',
-          secret,
-          txId: del.txId,
-          deletedBy: del.deletedBy,
-          reason: del.reason
+          action: 'delete_transaction', secret,
+          txId: del.txId, deletedBy: del.deletedBy, reason: del.reason
         })
       });
       const result = await response.json();
-      if (result.status === 'success') {
-        await removePendingDelete(del.txId);
-      }
+      if (result.status === 'success') await removePendingDelete(del.txId);
     } catch (error) {
-      console.error("Failed to sync delete for tx:", del.txId, error.message);
+      console.error('[Sync] Apps Script delete fallback failed:', error.message);
       break;
     }
   }

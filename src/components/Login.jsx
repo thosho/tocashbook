@@ -53,6 +53,11 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
       // Use Google Sheets API directly to write default data (bypasses Apps Script auth)
       await initSpreadsheetData(spreadsheetId, setupToken);
       
+      // ── CRITICAL: Save spreadsheetId and accessToken so background sync can use Sheets API ──
+      await localforage.setItem('spreadsheetId', spreadsheetId);
+      await localforage.setItem('googleAccessToken', setupToken);
+      await localforage.setItem('googleTokenExpiry', Date.now() + 55 * 60 * 1000); // ~55 min
+      
       // Seed local database with default data — no Apps Script call needed
       // The Apps Script will be available for future syncs once it auto-authorizes
       const defaultUser = { Name: 'Admin', Phone: 'boss', PIN: '1234', Role: 'Admin', IsActive: 'TRUE', AllowedBooks: 'ALL' };
