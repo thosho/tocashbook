@@ -8,7 +8,7 @@ import {
   LineElement, BarElement, Title, Tooltip, Legend, ArcElement 
 } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
-import { LogOut, RefreshCw, ArrowUpRight, ArrowDownRight, PlusCircle, Users, BookOpen, Share2, Eye, EyeOff, X, Plus, Contact, Trash2, AlertTriangle } from 'lucide-react';
+import { LogOut, RefreshCw, ArrowUpRight, ArrowDownRight, PlusCircle, Users, BookOpen, Share2, Eye, EyeOff, X, Plus, Contact, Trash2, AlertTriangle, TrendingUp } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../context/AppContext';
@@ -26,6 +26,7 @@ export default function BossHome({ user, setAuthUser }) {
   const [showStaffSummary, setShowStaffSummary] = useState(false);
   const [showRecentEntries, setShowRecentEntries] = useState(true);
   const [showBooks, setShowBooks] = useState(true);
+  const [showCharts, setShowCharts] = useState(window.innerWidth > 768);
   const [settings, setSettings] = useState({});
   const navigate = useNavigate();
 
@@ -497,41 +498,54 @@ export default function BossHome({ user, setAuthUser }) {
       </div>
 
       {/* ── Dashboard Charts ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px' }}>
-        <div className="card glass" style={{ padding: '16px' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text-primary)' }}>Cashflow (Last 7 Days)</h3>
-          <div style={{ height: '180px', width: '100%' }}>
-            <Line 
-              data={lineData} 
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 10 } } } },
-                scales: { 
-                  x: { grid: { display: false }, ticks: { font: { size: 10 } } }, 
-                  y: { grid: { color: 'rgba(200, 200, 200, 0.1)' }, ticks: { font: { size: 10 } } } 
-                }
-              }} 
-            />
-          </div>
+      <div className="card glass" style={{ marginBottom: '24px', padding: showCharts ? '16px' : '12px 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showCharts ? '16px' : '0' }}>
+          <h3 style={{ fontSize: '1.05rem', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
+            <TrendingUp size={18} className="text-primary" /> Financial Charts
+          </h3>
+          <button className="btn btn-outline" style={{ padding: '5px 12px', fontSize: '0.78rem' }} onClick={() => setShowCharts(!showCharts)}>
+            {showCharts ? 'Hide' : 'View All'}
+          </button>
         </div>
         
-        <div className="card glass" style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text-primary)', alignSelf: 'flex-start' }}>Expenses by Category</h3>
-          <div style={{ height: '160px', width: '100%', display: 'flex', justifyContent: 'center' }}>
-            <Doughnut 
-              data={doughnutData} 
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { 
-                  legend: { position: 'right', labels: { boxWidth: 10, padding: 8, font: { size: 10 } } } 
-                },
-                cutout: '65%'
-              }} 
-            />
+        {showCharts && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', animation: 'fadeIn 0.3s ease' }}>
+            <div style={{ background: 'var(--bg-color)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text-primary)', margin: '0 0 12px 0' }}>Cashflow (Last 7 Days)</h4>
+              <div style={{ height: '180px', width: '100%' }}>
+                <Line 
+                  data={lineData} 
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10, font: { size: 10 } } } },
+                    scales: { 
+                      x: { grid: { display: false }, ticks: { font: { size: 10 } } }, 
+                      y: { grid: { color: 'rgba(200, 200, 200, 0.1)' }, ticks: { font: { size: 10 } } } 
+                    }
+                  }} 
+                />
+              </div>
+            </div>
+            
+            <div style={{ background: 'var(--bg-color)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '12px', color: 'var(--text-primary)', alignSelf: 'flex-start', margin: '0 0 12px 0' }}>Expenses by Category</h4>
+              <div style={{ height: '160px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <Doughnut 
+                  data={doughnutData} 
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                      legend: { position: 'right', labels: { boxWidth: 10, padding: 8, font: { size: 10 } } } 
+                    },
+                    cutout: '65%'
+                  }} 
+                />
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div style={{ marginBottom: '24px' }}>
