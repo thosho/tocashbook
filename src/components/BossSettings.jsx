@@ -846,6 +846,76 @@ export default function BossSettings({ setSessionTimeout, setAuthUser }) {
         </div>
       </div>
 
+      {/* Danger Zone: Account & Data Deletion */}
+      <div className="card mb-4" style={{ border: '1px solid #ef4444', backgroundColor: 'rgba(239, 68, 68, 0.05)', padding: '16px', borderRadius: '12px' }}>
+        <h3 style={{ color: '#ef4444', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem', fontWeight: '700' }}>
+          <AlertTriangle size={20} /> Danger Zone: Delete Account & Data
+        </h3>
+        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.4 }}>
+          Permanently delete your Google Drive cloud sync spreadsheet and erase all local database entries on this device. This action cannot be undone.
+        </p>
+        <button 
+          onClick={() => { setWipePin(''); setWipeError(''); setShowWipeModal(true); }} 
+          className="btn text-white w-full"
+          style={{ background: '#ef4444', border: 'none', fontWeight: '600', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', borderRadius: '8px', cursor: 'pointer' }}
+        >
+          <Trash2 size={18} /> Delete Account & All Data
+        </button>
+      </div>
+
+      {/* Wipe Confirmation Modal */}
+      {showWipeModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div className="card animate-fade-in" style={{ maxWidth: '400px', width: '100%', padding: '24px', backgroundColor: 'var(--surface-color)', borderRadius: '16px', border: '1px solid #ef4444', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)' }}>
+            <h3 style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '10px', marginTop: 0, marginBottom: '12px', fontSize: '1.2rem', fontWeight: '700' }}>
+              <AlertTriangle size={24} color="#ef4444" /> Confirm Complete Erasure
+            </h3>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '16px', lineHeight: 1.5 }}>
+              You are about to totally erase all operational transaction data, party balances, and cloud spreadsheet linkages. To authorize this irrevocable destruction, please input your <strong>Boss PIN</strong>:
+            </p>
+
+            {wipeError && (
+              <div style={{ color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '10px 12px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '16px', fontWeight: '600' }}>
+                {wipeError}
+              </div>
+            )}
+
+            <div className="form-group mb-4">
+              <label style={{ fontSize: '0.85rem', fontWeight: '600', display: 'block', marginBottom: '6px', color: 'var(--text-secondary)' }}>Boss PIN Required:</label>
+              <input
+                type="password"
+                className="form-control w-full"
+                value={wipePin}
+                onChange={(e) => setWipePin(e.target.value)}
+                placeholder="Enter 4-digit PIN"
+                disabled={wiping || lockoutTimer > 0}
+                style={{ padding: '12px', fontSize: '1rem', borderRadius: '8px', textAlign: 'center', letterSpacing: '4px' }}
+                autoFocus
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                className="btn btn-outline flex-1"
+                onClick={() => setShowWipeModal(false)}
+                disabled={wiping}
+                style={{ padding: '12px', fontWeight: '600', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn text-white flex-1"
+                onClick={handleWipeData}
+                disabled={!wipePin || wiping || lockoutTimer > 0}
+                style={{ backgroundColor: '#ef4444', padding: '12px', fontWeight: '700', border: 'none', cursor: 'pointer' }}
+              >
+                {wiping ? 'Wiping Data...' : 'Confirm Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <button 
         onClick={() => { if(setAuthUser) setAuthUser(null); window.location.href = '/'; }} 
         className="btn btn-outline text-danger w-full" 
