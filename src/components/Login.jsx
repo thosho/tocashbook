@@ -8,7 +8,7 @@ import localforage from 'localforage';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
 import { useGoogleLogin } from '@react-oauth/google';
-import { setupGoogleBackend } from '../services/googleSetup';
+import { setupGoogleBackend, initSpreadsheetData } from '../services/googleSetup';
 
 // Branch management helpers (stored separately from main data)
 const getBranches = async () => (await localforage.getItem('branches')) || [];
@@ -40,7 +40,7 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
       setLoading(true);
       setError('');
       try {
-        const { webAppUrl, apiSecret } = await setupGoogleBackend(tokenResponse.access_token);
+        const { webAppUrl, apiSecret, spreadsheetId, accessToken } = await setupGoogleBackend(tokenResponse.access_token);
         
         // Immediately save to localforage so it survives page refresh
         await setApiLink(webAppUrl);
@@ -49,16 +49,33 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
         setApiLinkState(webAppUrl);
         setApiSecretState(apiSecret);
         
-        // Try to connect — will fail until user authorizes the new script
-        try {
-          await fetchAllData();
-          setShowSetup(false); // Success! Go to login screen
-        } catch (fetchErr) {
-          // Script needs owner authorization first (Google requirement for new deployments)
-          // Store the URL so we can show the authorize button
-          setPendingAuthUrl(webAppUrl);
-          setError('__AUTH_REQUIRED__');
-        }
+        // Use Google Sheets API directly to write default data (bypasses Apps Script auth)
+        await initSpreadsheetData(spreadsheetId, accessToken);
+        
+        // Seed local database with default data — no Apps Script call needed
+        // The Apps Script will be available for future syncs once it auto-authorizes
+        const defaultUser = { Name: 'Admin', Phone: 'boss', PIN: '1234', Role: 'Admin', IsActive: 'TRUE', AllowedBooks: 'ALL' };
+        await localforage.setItem('users', [defaultUser]);
+        await localforage.setItem('transactions', []);
+        await localforage.setItem('categories', [
+          { ID: 'cat_1', Name: 'Salary', Type: 'Income' },
+          { ID: 'cat_2', Name: 'Sales', Type: 'Income' },
+          { ID: 'cat_3', Name: 'Food', Type: 'Expense' },
+          { ID: 'cat_4', Name: 'Transport', Type: 'Expense' },
+        ]);
+        await localforage.setItem('books', [
+          { ID: 'book_main', Name: 'Main Book', Description: 'Default business ledger', CreatedAt: new Date().toISOString() }
+        ]);
+        await localforage.setItem('settings', [
+          { Key: 'BrandName', Value: 'My Business' },
+          { Key: 'SessionTimeout', Value: '30' },
+          { Key: 'DateFormat', Value: 'DD/MM/YYYY' },
+          { Key: 'OpeningBalance', Value: '0' },
+        ]);
+        
+        setError('');
+        setPendingAuthUrl('');
+        setShowSetup(false); // ✅ Done! Go straight to login screen
       } catch (err) {
         console.error(err);
         if (err.message.includes('https://script.google.com/home/usersettings')) {

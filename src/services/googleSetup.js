@@ -148,5 +148,61 @@ export async function setupGoogleBackend(accessToken) {
   }
 
   console.log('[Setup] Web App URL:', webAppUrl);
-  return { webAppUrl, apiSecret: generatedSecret };
+  return { webAppUrl, apiSecret: generatedSecret, spreadsheetId, accessToken };
+}
+
+/**
+ * Initialize the Google Spreadsheet with all required sheets and default data
+ * using the Sheets API directly (bypasses Apps Script authorization requirement).
+ * @param {string} spreadsheetId - The spreadsheet ID
+ * @param {string} accessToken - Google OAuth access token
+ */
+export async function initSpreadsheetData(spreadsheetId, accessToken) {
+  const sheetsBase = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+  };
+
+  // Get existing sheets
+  const infoRes = await fetch(sheetsBase, { headers });
+  const info = await infoRes.json();
+  const existingSheets = (info.sheets || []).map(s => s.properties.title);
+
+  const requests = [];
+
+  // Add sheets that don't exist yet
+  const needed = ['Users', 'Transactions', 'Categories', 'Settings', 'Books'];
+  for (const title of needed) {
+    if (!existingSheets.includes(title)) {
+      requests.push({ addSheet: { properties: { title } } });
+    }
+  }
+
+  if (requests.length > 0) {
+    await fetch(`${sheetsBase}:batchUpdate`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ requests }),
+    });
+  }
+
+  // Helper to write rows to a sheet
+  const writeRows = async (range, values) => {
+    await fetch(`${sheetsBase}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ values }),
+    });
+  };
+
+  // Read Users to check if already initialized
+  const usersCheck = await fetch(`${sheetsBase}/values/Users!A1:A2`, { headers });
+  const usersData = await usersCheck.json();
+  if (!usersData.values || usersData.values.length < 2) {
+    // Initialize all sheets with default data
+    await writeRows('Users!A1', [['Name','Phone','PIN','Role','IsActive','AllowedBooks'],['Admin','boss','1234','Admin','TRUE','ALL']]);
+    await writeRows('Transactions!A1', [['ID','Timestamp','Date','Type','Category','PartyName','PartyPhone','Amount','PaymentMode','Reference','Remarks','User','ImageUrl','EditHistory','BossNotes','Recurring','BookID','UpiApp']]);
+    await writeRows('Books!A1', [['ID','Name','Description','CreatedAt'],['book_main','Main Book','Default business ledger',new Date().toISOString()]]);
+    await writeRows('Categories!A1', [['ID','Name','Type'],['cat_1','Salary','Income'],['cat_2','Sales','Income'],['cat_3','Food','Expense'],['cat_4','Transport','Expense']]);
+    await writeRows('Settings!A1', [['Key','Value'],['BrandName','My Business'],['Address',''],['Phone',''],['SessionTimeout','30'],['DateFormat','DD/MM/YYYY'],['OpeningBalance','0']]);
+  }
 }
