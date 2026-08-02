@@ -21,7 +21,7 @@ export default function SidebarLayout() {
             <LayoutDashboard size={20} /> {t('nav.dashboard')}
           </Link>
           <Link to="/entry" className={`sidebar-item ${currentPath === '/entry' ? 'active' : ''}`}>
-            <PlusCircle size={20} /> {t('dashboard.add_transaction')}
+            <PlusCircle size={20} /> Add Entries
           </Link>
           <Link to="/entries" className={`sidebar-item ${currentPath === '/entries' ? 'active' : ''}`}>
             <List size={20} /> Entries
@@ -61,7 +61,7 @@ export default function SidebarLayout() {
         </Link>
         <Link to="/entry" className={`bottom-nav-item ${currentPath === '/entry' ? 'active' : ''}`}>
           <PlusCircle size={22} />
-          <span>{t('dashboard.add_transaction')}</span>
+          <span>Add Entries</span>
         </Link>
         <Link to="/entries" className={`bottom-nav-item ${currentPath === '/entries' ? 'active' : ''}`}>
           <List size={22} />

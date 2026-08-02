@@ -344,16 +344,27 @@ input:checked + .slider:before {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   color: var(--text-secondary);
   text-decoration: none;
-  font-size: 0.7rem;
-  font-weight: 500;
+  font-size: 0.65rem;
+  font-weight: 600;
   flex: 1;
+  min-width: 0;
   height: 100%;
   cursor: pointer;
   background: transparent;
   border: none;
+  overflow: hidden;
+}
+
+.bottom-nav-item span {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 1px;
 }
 
 .bottom-nav-item.active {
