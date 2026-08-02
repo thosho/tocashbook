@@ -4,4 +4,5 @@
     <string name="title_activity_main">Open Cashbook</string>
     <string name="package_name">com.thosho.opencashbook</string>
     <string name="custom_url_scheme">com.thosho.opencashbook</string>
+    <string name="server_client_id">830225285550-9in8dfbgur29a5f0hk7hmnui14hf3vhb.apps.googleusercontent.com</string>
 </resources>

@@ -9,6 +9,8 @@ import { useTranslation } from 'react-i18next';
 import LanguageSelector from './LanguageSelector';
 import { useGoogleLogin } from '@react-oauth/google';
 import { setupGoogleBackend, initSpreadsheetData } from '../services/googleSetup';
+import { Capacitor } from '@capacitor/core';
+import { GoogleSignIn } from '@capawesome/capacitor-google-sign-in';
 
 // Branch management helpers (stored separately from main data)
 const getBranches = async () => (await localforage.getItem('branches')) || [];
@@ -35,69 +37,111 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const handleGoogleSetup = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setLoading(true);
+  const processGoogleAuth = async (accessToken) => {
+    setLoading(true);
+    setError('');
+    try {
+      const { webAppUrl, apiSecret, spreadsheetId, accessToken: setupToken } = await setupGoogleBackend(accessToken);
+      
+      // Immediately save to localforage so it survives page refresh
+      await setApiLink(webAppUrl);
+      await setApiSecret(apiSecret);
+      await initDb();
+      setApiLinkState(webAppUrl);
+      setApiSecretState(apiSecret);
+      
+      // Use Google Sheets API directly to write default data (bypasses Apps Script auth)
+      await initSpreadsheetData(spreadsheetId, setupToken);
+      
+      // Seed local database with default data — no Apps Script call needed
+      // The Apps Script will be available for future syncs once it auto-authorizes
+      const defaultUser = { Name: 'Admin', Phone: 'boss', PIN: '1234', Role: 'Admin', IsActive: 'TRUE', AllowedBooks: 'ALL' };
+      await localforage.setItem('users', [defaultUser]);
+      await localforage.setItem('transactions', []);
+      await localforage.setItem('categories', [
+        { ID: 'cat_1', Name: 'Salary', Type: 'Income' },
+        { ID: 'cat_2', Name: 'Sales', Type: 'Income' },
+        { ID: 'cat_3', Name: 'Food', Type: 'Expense' },
+        { ID: 'cat_4', Name: 'Transport', Type: 'Expense' },
+      ]);
+      await localforage.setItem('books', [
+        { ID: 'book_main', Name: 'Main Book', Description: 'Default business ledger', CreatedAt: new Date().toISOString() }
+      ]);
+      await localforage.setItem('settings', [
+        { Key: 'BrandName', Value: 'My Business' },
+        { Key: 'SessionTimeout', Value: '30' },
+        { Key: 'DateFormat', Value: 'DD/MM/YYYY' },
+        { Key: 'OpeningBalance', Value: '0' },
+      ]);
+      
       setError('');
-      try {
-        const { webAppUrl, apiSecret, spreadsheetId, accessToken } = await setupGoogleBackend(tokenResponse.access_token);
-        
-        // Immediately save to localforage so it survives page refresh
-        await setApiLink(webAppUrl);
-        await setApiSecret(apiSecret);
-        await initDb();
-        setApiLinkState(webAppUrl);
-        setApiSecretState(apiSecret);
-        
-        // Use Google Sheets API directly to write default data (bypasses Apps Script auth)
-        await initSpreadsheetData(spreadsheetId, accessToken);
-        
-        // Seed local database with default data — no Apps Script call needed
-        // The Apps Script will be available for future syncs once it auto-authorizes
-        const defaultUser = { Name: 'Admin', Phone: 'boss', PIN: '1234', Role: 'Admin', IsActive: 'TRUE', AllowedBooks: 'ALL' };
-        await localforage.setItem('users', [defaultUser]);
-        await localforage.setItem('transactions', []);
-        await localforage.setItem('categories', [
-          { ID: 'cat_1', Name: 'Salary', Type: 'Income' },
-          { ID: 'cat_2', Name: 'Sales', Type: 'Income' },
-          { ID: 'cat_3', Name: 'Food', Type: 'Expense' },
-          { ID: 'cat_4', Name: 'Transport', Type: 'Expense' },
-        ]);
-        await localforage.setItem('books', [
-          { ID: 'book_main', Name: 'Main Book', Description: 'Default business ledger', CreatedAt: new Date().toISOString() }
-        ]);
-        await localforage.setItem('settings', [
-          { Key: 'BrandName', Value: 'My Business' },
-          { Key: 'SessionTimeout', Value: '30' },
-          { Key: 'DateFormat', Value: 'DD/MM/YYYY' },
-          { Key: 'OpeningBalance', Value: '0' },
-        ]);
-        
-        setError('');
-        setPendingAuthUrl('');
-        setShowSetup(false); // ✅ Done! Go straight to login screen
-      } catch (err) {
-        console.error(err);
-        if (err.message.includes('https://script.google.com/home/usersettings')) {
-          setError(
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <strong>Google requires one final step:</strong>
-              <span>Please click the link below to allow your account to create the script, turn the switch to <b>ON</b>, and then click Automated Setup again.</span>
-              <a href="https://script.google.com/home/usersettings" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 'bold', textDecoration: 'underline' }}>
-                👉 Open Apps Script Settings
-              </a>
-            </div>
-          );
-        } else {
-          setError('Google Setup failed: ' + err.message);
-        }
+      setPendingAuthUrl('');
+      setShowSetup(false); // ✅ Done! Go straight to login screen
+    } catch (err) {
+      console.error(err);
+      if (err.message.includes('https://script.google.com/home/usersettings')) {
+        setError(
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <strong>Google requires one final step:</strong>
+            <span>Please click the link below to allow your account to create the script, turn the switch to <b>ON</b>, and then click Automated Setup again.</span>
+            <a href="https://script.google.com/home/usersettings" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 'bold', textDecoration: 'underline' }}>
+              👉 Open Apps Script Settings
+            </a>
+          </div>
+        );
+      } else {
+        setError('Google Setup failed: ' + err.message);
       }
-      setLoading(false);
-    },
+    }
+    setLoading(false);
+  };
+
+  const handleWebGoogleSetup = useGoogleLogin({
+    onSuccess: (tokenResponse) => processGoogleAuth(tokenResponse.access_token),
     scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/script.projects https://www.googleapis.com/auth/script.deployments https://www.googleapis.com/auth/drive.file'
   });
 
+  const handleNativeGoogleSetup = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Attempt sign in with the native plugin
+      const result = await GoogleSignIn.signIn();
+      
+      if (!result.accessToken) {
+        throw new Error("No access token returned from Google. Ensure all scopes are permitted.");
+      }
+      
+      await processGoogleAuth(result.accessToken);
+    } catch (err) {
+      console.error("Native Google Sign-In Error:", err);
+      setError("Native Google Setup failed: " + (err.message || 'Unknown error'));
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSetupClick = () => {
+    if (Capacitor.isNativePlatform()) {
+      handleNativeGoogleSetup();
+    } else {
+      handleWebGoogleSetup();
+    }
+  };
+
   useEffect(() => {
+    // Initialize Native Google Sign-In on mount if on Android/iOS
+    if (Capacitor.isNativePlatform()) {
+      GoogleSignIn.initialize({
+        clientId: '830225285550-9in8dfbgur29a5f0hk7hmnui14hf3vhb.apps.googleusercontent.com',
+        scopes: [
+          'https://www.googleapis.com/auth/spreadsheets',
+          'https://www.googleapis.com/auth/script.projects',
+          'https://www.googleapis.com/auth/script.deployments',
+          'https://www.googleapis.com/auth/drive.file'
+        ]
+      }).catch(console.error);
+    }
     initializeLogin();
   }, []);
 
@@ -354,16 +398,11 @@ export default function Login({ setAuthUser, setSessionTimeout }) {
         {showSetup ? (
           <form onSubmit={handleSetup}>
             <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-              <button 
-                type="button" 
-                onClick={() => handleGoogleSetup()} 
-                className="btn w-full" 
-                style={{ 
-                  background: 'white', color: '#333', minHeight: '48px', 
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                  border: '1px solid #ddd'
-                }} 
+              <button
+                type="button"
+                onClick={handleGoogleSetupClick}
                 disabled={loading}
+                className="w-full flex items-center justify-center gap-2 bg-white text-gray-800 border border-gray-300 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-colors shadow-sm"
               >
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google" />
                 Automated Setup (Sign in with Google)
