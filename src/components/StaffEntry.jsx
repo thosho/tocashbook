@@ -152,7 +152,7 @@ export default function StaffEntry({ user, setAuthUser }) {
 
     setTransactions(
       trans
-        .filter(t => (canSeeAll || String(t.user || '').toLowerCase() === String(user.Name || user.Username || user.Phone || '').toLowerCase()) && t.bookId === currentBookId)
+        .filter(t => t.category !== 'Opening Balance' && (canSeeAll || String(t.user || '').toLowerCase() === String(user.Name || user.Username || user.Phone || '').toLowerCase()) && t.bookId === currentBookId)
         .sort((a, b) => new Date(b.date) - new Date(a.date))
         .slice(0, 50)
     );

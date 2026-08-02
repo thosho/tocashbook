@@ -84,7 +84,9 @@ export default function BossHome({ user, setAuthUser }) {
     const allTrans = await getTransactions();
     // ACCOUNTING: Each cashbook shows ONLY its own ledger entries to maintain strict branch isolation.
     // Entries with no bookId are backward-compatible (treated as belonging exclusively to Main Book).
+    // ACCOUNTING FIX: Exclude party Opening Balance records (accounts receivable/payable) from cashflow & physical cash totals!
     const filtered = allTrans.filter(t => {
+      if (t.category === 'Opening Balance') return false;
       if (activeBookId === 'all_books') return true;
       if (!activeBookId || activeBookId === 'book_main') {
         return !t.bookId || String(t.bookId) === 'book_main';

@@ -90,6 +90,7 @@ export default function Entries() {
     const q = String(searchQuery || '').toLowerCase().trim();
     let result = [...transactions]
       .filter(t => {
+        if (t.category === 'Opening Balance') return false;
         if (activeBookId === 'all_books') return true;
         if (!activeBookId || activeBookId === 'book_main') {
           return !t.bookId || String(t.bookId) === 'book_main';

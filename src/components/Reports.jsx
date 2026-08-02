@@ -75,9 +75,11 @@ export default function Reports() {
   };
 
   // BUG-R2 FIX: uniqueParties derived from book-filtered transactions (useMemo below)
+  // ACCOUNTING FIX: Exclude party Opening Balance accounts receivable/payable from cash reports!
   const transactions = useMemo(() => {
-    if (bookFilter === 'all') return allTransactions;
-    return allTransactions.filter(t => String(t.bookId) === String(bookFilter));
+    const validTrans = allTransactions.filter(t => t.category !== 'Opening Balance');
+    if (bookFilter === 'all') return validTrans;
+    return validTrans.filter(t => String(t.bookId) === String(bookFilter));
   }, [allTransactions, bookFilter]);
 
   // BUG-R2 FIX: parties derived from book-filtered transactions
